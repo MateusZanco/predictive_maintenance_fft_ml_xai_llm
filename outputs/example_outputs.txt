@@ -1,0 +1,338 @@
+
+---------------------------- AMOSTRA REAL CLASSE 0 -------------------------------------------------------------------------------------
+
+Amostra explicada: 0
+Classe predita: 0 - Normal
+Probabilidade: 0.9969
+Tokens de entrada: 473
+Tokens de entrada em cache: 0
+Tokens de saida: 362
+Tokens totais: 835
+
+Interpretação Vibracional:
+Sinais indicam condição operacional dentro da faixa normal. Evidência principal: baixa energia relativa na faixa 2500–5000 Hz no eixo Y (valor baixo de energia nesta banda), e larguras de banda espectral elevadas nos eixos Y e Z, com maior influência nos eixos Y/Z. Eixo Y é o mais relevante; bandas de interesse são 2500–5000 Hz e a faixa ampla representada pela largura de banda espectral. Energia em 150–300 Hz no eixo X é muito baixa e não sugere aumento anômalo. Centroide espectral no eixo Y está dentro do intervalo observado para operação normal.
+
+Interpretação Mecânica:
+Condição mecânica sugerida: operação estável sem sinais claros de defeitos dinâmicos ativos (como desbalanceamento severo, folgas crescentes ou contato intermitente) nas faixas avaliadas. As larguras espectrais maiores em Y/Z podem refletir conteúdo harmônico distribuído ligado ao regime operacional normal (excitação de múltiplas frequências), não necessariamente patológico dado o nível geral de energia baixo na banda alta. Indicação: conclusiva para condição normal com alta confiança.
+
+Ações Recomendadas:
+- Manutenção de rotina conforme plano (inspeção periódica e monitoramento contínuo).
+- Repetir aquisição vibracional no próximo intervalo programado para confirmar tendência.
+- Se houver alterações operacionais (carga, velocidade), registrar e comparar espectros para garantir estabilidade.
+- Não requer ação corretiva imediata; manter vigilância nas bandas 2500–5000 Hz e nas larguras de banda Y/Z em próximas medições.
+
+
+
+Amostra explicada: 1
+Classe predita: 0 - Normal
+Probabilidade: 0.9961
+Tokens de entrada: 476
+Tokens de entrada em cache: 0
+Tokens de saida: 378
+Tokens totais: 854
+
+Interpretação Vibracional:
+Leitura classificada como Normal com probabilidade 99.61%. Evidência vibracional indica baixa energia nas bandas médias-altas; a maior contribuição vem de energia relativa em 2,5–5 kHz no eixo Y (valor 0,0295) e pela largura de banda espectral elevada no eixo Z (≈1279,9 Hz) e no eixo Y (≈1027,9 Hz). Eixos Y e Z são os mais relevantes. Não há picos de energia significativos em bandas baixas que sugiram ressonância ou desequilíbrio pronunciado; as energias em 150–300 Hz (eixo X) e 1,2–2,5 kHz (eixo Z) são muito baixas.
+
+Interpretação Mecânica:
+Condição operacional consistente com comportamento normal/esperado. A presença de largura de banda espectral maior em Y/Z com baixa energia relativa indica sinais amplificados distribuídos, não um evento tonal dominante associado a falha localizada. Não há indicação clara de dano por impacto, desalinhamento severo ou desgaste acelerado a partir das características fornecidas. A conclusão é de operação normal, sugestiva porém não absolutiva — sem evidência suficiente para diagnosticar anomalia específica.
+
+Ações Recomendadas:
+- Manter rotina de monitoramento periódico conforme plano (coletar sinais em Y e Z com as mesmas janelas de frequência).
+- Comparar com histórico sazonal para confirmar estabilidade das larguras de banda espectral.
+- Se houver mudanças >20% nessas métricas em próximas leituras, programar inspeção detalhada.
+- Manter lubrificação e alinhamento preventivos conforme intervalo normal; nenhuma intervenção corretiva imediata necessária.
+
+
+Amostra explicada: 2
+Classe predita: 0 - Normal
+Probabilidade: 0.9971
+Tokens de entrada: 476
+Tokens de entrada em cache: 0
+Tokens de saida: 420
+Tokens totais: 896
+
+Interpretação Vibracional:
+Probabilidade elevada de condição normal (0.9971). Evidência vibracional indica energia relativa muito baixa na banda 2500–5000 Hz no eixo Y (valor 0.0315), que contribui positivamente para a classificação como normal. As larguras de banda espectral nos eixos Z (≈1276 Hz) e Y (≈1044 Hz) são moderadas e também favorecem a condição normal. Pequenas contribuições vêm das energias na faixa 150–300 Hz no eixo X, com valores muito baixos, indicando ausência de componentes energéticos significativos nessas faixas. Eixos mais relevantes: Y (alta frequência) e Z (largura de banda); faixa de interesse principal: 2500–5000 Hz (Y) e bandas de largura espectral geral em Z/Y.
+
+Interpretação Mecânica:
+Com base nas medições apresentadas, não há indicação vibracional consistente de falha emergente. A baixa energia em altas frequências no eixo Y e as larguras de banda espectral dentro de limites modestos sugerem ausência de excitações anômalas por desgaste localizado, desbalanceamento severo ou folgas que gerem picos harmônicos significativos. A evidência é compatível com condição operacional estável, sendo a conclusão de normalidade confiável dado o alto peso das características listadas.
+
+Ações Recomendadas:
+- Manutenção preventiva padrão: manter rotina de monitoramento periódico com medições nas mesmas faixas (especial atenção a 2500–5000 Hz e larguras de banda em Y/Z).
+- Verificação visual e checagem básica (rolamentos, acoplamento, fixações) conforme plano de manutenção preventiva, sem necessidade de intervenção corretiva imediata.
+- Reavaliar caso haja aumento da energia relativa em 2500–5000 Hz no eixo Y ou crescimento das larguras de banda espectral em medições subsequentes.
+
+
+
+---------------------------- AMOSTRA REAL CLASSE 1 -------------------------------------------------------------------------------------
+
+Amostra explicada: 3
+Classe predita: 1 - Desgaste Superficial
+Probabilidade: 0.9975
+Tokens de entrada: 479
+Tokens de entrada em cache: 0
+Tokens de saida: 354
+Tokens totais: 833
+
+Interpretação Vibracional:
+Leitura indica energia concentrada no eixo X na banda 150–300 Hz (valor absoluto de energia no eixo X nessa banda elevado em relação ao histórico), com contribuição secundária na banda 300–600 Hz no eixo Z. Eixos mais relevantes: X (principal) e Z (secundário). Bandas mais relevantes: 150–300 Hz (forte), seguida por 300–600 Hz e, em menor grau, 600–1200 Hz.
+
+Interpretação Mecânica:
+Padrão sugestivo de desgaste superficial na superfície de contato ou rolamento que transmite vibração principalmente na direção X. A presença de energia relativa elevada em 300–600 Hz no eixo Z indica possível interação de superfícies com microasperezas ou pequenas irregularidades que geram conteúdo harmônico/ruído na banda média. A evidência é consistente com desgaste superficial, não suficiente para afirmar dano severo profundo.
+
+Ações Recomendadas:
+- Inspeção visual e tátil da superfície de contato/rolamento associada ao eixo X para confirmação de desgaste superficial (procurar polimento, ranhuras finas, microfissuras).
+- Medição de folgas e alinhamento axial no conjunto que transmite carga no eixo X.
+- Repetir aquisição vibracional com sensores em X e Z após limpeza e em condições de carga reproduzíveis para comparar espectros (verificar estabilidade da energia em 150–300 Hz).
+- Se confirmado desgaste superficial, planejar retífica ou substituição da superfície afetada conforme criticidade; caso contrário, monitoramento próximo com medições periódicas.
+
+
+Amostra explicada: 4
+Classe predita: 1 - Desgaste Superficial
+Probabilidade: 0.9973
+Tokens de entrada: 479
+Tokens de entrada em cache: 0
+Tokens de saida: 415
+Tokens totais: 894
+
+Interpretação Vibracional:
+Leitura indica aumento relativo de energia no eixo X na banda 150–300 Hz como maior contribuinte para a classificação "Desgaste Superficial" (eixo X: energia 150–300 Hz elevada em relação ao esperado). Há também contribuição secundária de energia relativa na banda 300–600 Hz no eixo Z e energia absoluta moderada em 600–1200 Hz no eixo Z. Portanto, os eixos mais relevantes são X (principal) e Z (secundário); bandas críticas: 150–300 Hz (principal), 300–600 Hz e 600–1200 Hz (secundárias).
+
+Interpretação Mecânica:
+Padrão vibracional é sugestivo de atrito ou contato superficial localizado que gera contenção de energia nas bandas médias (150–600 Hz) com transmissão ao eixo X predominante e transmissão vertical (Z) menor. O nível muito alto de probabilidade (0,9973) reforça que o comportamento corresponde a desgaste superficial típico, mas não permite identificar componente específico sem inspeção visual ou tátil. Indicação: provável desgaste de faces de contato ou revestimento superficial que provoca aumento de energia na faixa média de frequência.
+
+Ações Recomendadas:
+- Inspeção visual direcionada às superfícies de contato acessíveis e superfícies externas do rolamento/conjunto, priorizando alinhamento com eixo X.
+- Verificação tátil e medição de folgas/rugosidade nas peças de contato suspeitas.
+- Registrar e comparar espectros por eixo antes e depois de pequenas operações para confirmar fonte (verificar se pico em 150–300 Hz persiste).
+- Se confirmado desgaste superficial: planejar retífica/substituição da superfície afetada ou troca preventiva do conjunto conforme criticidade.
+- Monitoramento reforçado (curto prazo) com medições vibrações por X e Z em 150–1200 Hz para avaliar evolução.
+
+
+Amostra explicada: 5
+Classe predita: 1 - Desgaste Superficial
+Probabilidade: 0.9971
+Tokens de entrada: 479
+Tokens de entrada em cache: 0
+Tokens de saida: 397
+Tokens totais: 876
+
+Interpretação Vibracional:
+Medida indica forte contribuição de energia na faixa 150–300 Hz no eixo X (energia_150_300Hz_x elevada em relação ao baseline implicando aumento significativo), com contribuições menores nas faixas 300–600 Hz e 600–1200 Hz no eixo Z. Eixo X é o mais afetado; banda 150–300 Hz é a mais relevante para a classificação de desgaste superficial. Largura de banda espectral no eixo X está registrada, mas tem impacto neutro/irrelevante no diagnóstico aqui.
+
+Interpretação Mecânica:
+Padrão vibracional sugere desgaste superficial localizado que gera energia concentrada na faixa 150–300 Hz principalmente no eixo X, compatível com atrito ou perda de acabamento de superfícies rolantes ou de contato que geram componentes de alta energia nessa banda. Níveis nas faixas mais altas no eixo Z são modestos e podem indicar interação secundária, não predominante. Dada a alta probabilidade (0,9971), a indicação é forte para desgaste superficial; não há evidência suficiente para afirmar falha por desalinhamento, folga excessiva ou fratura.
+
+Ações Recomendadas:
+- Inspeção visual e tátil das superfícies de contato/rolamento associadas ao eixo X (buscar sinais de abrasão, riscas, perda de lubrificação).
+- Verificação e registro do estado do lubrificante e reaplicação ou troca se contaminado/oxidado.
+- Medição de folgas e jogo axial/radial nas partes que atuam no eixo X.
+- Repetir ensaio vibracional após intervenção para confirmar redução de energia em 150–300 Hz no eixo X.
+- Se o desgaste for confirmado, planejar reparo ou substituição das superfícies afetadas conforme criticidade operacional.
+
+
+---------------------------- AMOSTRA REAL CLASSE 2 -------------------------------------------------------------------------------------
+
+Amostra explicada: 6
+Classe predita: 2 - Dente Trincado
+Probabilidade: 0.9718
+Tokens de entrada: 480
+Tokens de entrada em cache: 0
+Tokens de saida: 408
+Tokens totais: 888
+
+Interpretação Vibracional:
+Sinais indicam energia elevada no intervalo 1200–2500 Hz no eixo Z (maior impacto); também há aumento de energia relativa em bandas 300–600 Hz e 1200–2500 Hz no eixo X. Desvio padrão no eixo Z está relativamente baixo. Portanto a evidência vibracional é concentrada nas bandas de alta frequência (1200–2500 Hz) principalmente em Z e presença complementar de conteúdo em 300–600 Hz em X.
+
+Interpretação Mecânica:
+Padrão sugere emissão de alta frequência compatível com ocorrência de trinca em dente (impactos/ressonâncias de pequena duração) com maior origem na direção Z e contribuição na direção X. O baixo desvio padrão Z indica que a amplitudede baixa frequência não é predominante, reforçando que a anomalia está em componentes de alta frequência. A indicação é consistente com Dente Trincado, mas sem análise de ordem ou inspeção visual a conclusão permanece de grau alto de confiança (probabilidade 97%), ainda assim sugestiva quanto à localização exata.
+
+Ações Recomendadas:
+- Parada programada para inspeção visual e tátil dos dentes da engrenagem/transmissão; priorizar faces expostas correlacionadas ao plano Z.
+- Inspeção não destrutiva focada (luZ penetrante ou endoscopia) em dentes suspeitos.
+- Coleta de gravação vibracional em maior resolução nas bandas 300–600 Hz e 1200–2500 Hz em X e Z para comparação pré/post-inspeção.
+- Verificar alinhamento e folga de engrenagens (backlash) e condições de lubrificação; registrar condições antes de operar.
+- Se confirmação de trinca, substituir o componente afetado ou executar reparo/retífica conforme criticidade; evitar operação prolongada até conclusão.
+
+
+
+Amostra explicada: 7
+Classe predita: 2 - Dente Trincado
+Probabilidade: 0.9929
+Tokens de entrada: 480
+Tokens de entrada em cache: 0
+Tokens de saida: 466
+Tokens totais: 946
+
+Interpretação Vibracional:
+Elevada energia na banda de 1.200–2.500 Hz no eixo Z (energia_1200_2500Hz_z) é o sinal mais influente, indicando pulsos de alta frequência predominantes na componente axial/vertical. Há também aumento na energia absoluta e relativa na banda de 300–600 Hz no eixo X (energia_300_600Hz_x e energia_relativa_300_600Hz_x), apontando conteúdo harmônico/impactante em direção radial/transversal. O desvio padrão em Z está relativamente baixo e tem impacto negativo no score, ou seja, a variabilidade global no eixo Z não é elevada apesar da presença de picos de alta frequência. Em suma: forte componente de alta frequência em Z e conteúdo de impacto em 300–600 Hz em X.
+
+Interpretação Mecânica:
+Com base nas evidências, a indicação é sugestiva de falha de dente trincado (classe prevista) por presença de impactos de alta frequência compatíveis com rompimento parcial de superfície de dente e sua interação durante a engrenagem ou elemento similar. A combinação de picos em 1.200–2.500 Hz (axial) e energia em 300–600 Hz (radial) é coerente com geração de sinais por choque repetitivo e modulação estrutural típica de trincas em dentes sob carga. A conclusão é fortemente sugerida pelo alto grau de probabilidade (0,9929), mas sem inspeção visual/tribológica a confirmação é necessária.
+
+Ações Recomendadas:
+- Programar parada para inspeção visual e ultrassom/boroscopia no conjunto dentado/engrenagem imediato.  
+- Medir folgas e verificar alinhamento e montagem antes da retirada completa.  
+- Registrar sinais vibracionais de referência (eixos X e Z) durante manobra de aceleração/desaceleração para confirmar origem e ordem dos impactos.  
+- Se confirmada trinca, substituir ou reparar o dente/engrenagem afetada; avaliar componentes adjacentes por danos secundários.  
+- Aumentar frequência de monitoramento até intervenção para rastrear evolução.
+
+
+Amostra explicada: 8
+Classe predita: 2 - Dente Trincado
+Probabilidade: 0.9976
+Tokens de entrada: 471
+Tokens de entrada em cache: 0
+Tokens de saida: 496
+Tokens totais: 967
+
+Interpretação Vibracional:
+A evidência vibracional indica energia concentrada na faixa de 1200–2500 Hz no eixo Z como o sinal mais significativo (energia_1200_2500Hz_z elevada em relação ao histórico), com aumento adicional de níveis gerais no eixo Z (desvio_padrao_z e rms_z). Também há contribuição de energia na faixa 300–600 Hz no eixo X (energia_relativa_300_600Hz_x e energia_300_600Hz_x), porém com impacto menor que a banda alta em Z. Eixos mais relevantes: Z (principal) e, secundariamente, X. As bandas críticas: alta frequência (1200–2500 Hz) dominante e média frequência (300–600 Hz) presente em X.
+
+Interpretação Mecânica:
+Com base na forte presença de energia em alta frequência no eixo Z e no rótulo preditivo (“Dente Trincado”), o padrão é compatível com defeito localizado em superfície de dente (fissura/incisal) que gera impactos e excitações de alta frequência quando a engrenagem/roda dentada passa por contato. A presença de energia em 300–600 Hz no eixo X pode indicar modulação estrutural ou transmissão via montagens, mas seu impacto é menor. Dado o alto grau de confiança (probabilidade 0,9976) a indicação é sugestiva de dente trincado; entretanto, confirmação física é necessária antes de intervenções corretivas.
+
+Ações Recomendadas:
+- Parar ou reduzir operação para inspeção visual e por ampliação (boroscopia/inspeção endoscópica) da roda dentada/engrenagem indicada, com atenção a faces de dente sujeitas a contato que geram vibração em Z.
+- Medir vibração repetida com aquisição de alta frequência em Z (1200–2500 Hz) e X (300–600 Hz) para confirmar persistência do pico e correlacionar com rotação/posição.
+- Registrar fase/ordem para localizar angularmente o evento de impacto e facilitar inspeção localizada.
+- Se for confirmada trinca, planejar reparo ou substituição da peça antes de operação contínua; se não confirmada, aumentar frequência de monitoramento e reavaliar após curto periodo de operação.
+
+
+---------------------------- AMOSTRA REAL CLASSE 3 -------------------------------------------------------------------------------------
+
+Amostra explicada: 9
+Classe predita: 3 - Dente Lascado
+Probabilidade: 0.9972
+Tokens de entrada: 477
+Tokens de entrada em cache: 0
+Tokens de saida: 416
+Tokens totais: 893
+
+Interpretação Vibracional:
+Evidência indica forte aumento de conteúdo espectral na direção X, com largura de banda espectral muito elevada (valor 1208 Hz) e centróide deslocado para ~1550 Hz. Isso aponta energia concentrada em bandas altas na direção X; contribuições nas bandas 2,5–5 kHz e 300–600 Hz são muito pequenas em comparação. Eixo mais relevante: X; bandas relevantes: banda larga centrada em torno de ~1,5 kHz e componentes de alta frequência.
+
+Interpretação Mecânica:
+Padrão vibracional compatível com dano em dente (dente lascado) — impacto/irregularidade periódica gerando espalhamento espectral e aumento da largura de banda na direção X. A elevada centróide e a banda larga sugerem excitações com conteúdo harmônico/rápido associado a choque ou perda de material na superfície de contato. A indicação é forte (probabilidade 99,72%), portanto interpretação favorável a dente lascado; não há evidência suficiente aqui para localizar com precisão além da direção X.
+
+Ações Recomendadas:
+- Parar a máquina para inspeção visual e tátil imediata do conjunto de engrenagens/roda dentada relacionado à direção X.
+- Inspeção das superfícies de dente (procura por lascados, trincas, desgaste localizado) e medição de folgas de engrenamento.
+- Se confirmado dano: substituir ou reparar o componente dentado conforme plano de manutenção e verificar alinhamento e lubrificação.
+- Se visualmente inconclusivo: realizar ensaio complementar (análise de impacto/ordeamento temporal ou exame borescópico) e coletar sinais adicionais após correção para validar redução da largura de banda.
+- Registrar evidências (fotos, medições) e aumentar frequência de monitoramento se a máquina permanecer em operação até reparo.
+
+
+
+Amostra explicada: 10
+Classe predita: 3 - Dente Lascado
+Probabilidade: 0.9972
+Tokens de entrada: 477
+Tokens de entrada em cache: 0
+Tokens de saida: 454
+Tokens totais: 931
+
+Interpretação Vibracional:
+A leitura apresenta forte evidência de energia concentrada em faixa ampla na componente X: largura da banda espectral em X muito elevada (≈1183 Hz) e centróide espectral deslocado para ~1526 Hz, indicando presença de conteúdo de alta frequência predominante no eixo X. Energia relativa entre 2,5–5 kHz na X e aumentos menores em 300–600 Hz no eixo Z confirmam foco espectral em bandas altas com menor contribuição de baixa frequência (0–50 Hz desprezível). Eixos mais relevantes: X (principal) e secundariamente Z; bandas mais relevantes: alta frequência em torno da região centróide ~1,5 kHz e espectro alargado até vários kHz.
+
+Interpretação Mecânica:
+Padrão vibracional compatível com avaria localizada que gera impacto/ruído de alta frequência no sentido X — diagnóstica mais provável: dente lascado em elemento dentado (engrenagem, anel, etc.) ou superfície com descontinuidade que causa repetidos choques de alta frequência. A probabilidade prevista é muito alta (≈99,7%), portanto indicação forte de dano por lascamento. Não há evidência suficiente para afirmar excitação por baixa frequência estrutural ou desalinhamento rotacional primário.
+
+Ações Recomendadas:
+- Parada controlada e inspeção visual das partes dentadas/superfícies de engrenamento acessíveis no eixo correspondente ao sensor X.
+- Inspeção endoscópica/borescope nas áreas não visíveis e verificação de presença de dentes lascados, trincas ou detritos.
+- Verificação de lubrificação e contaminação que possam agravar desgaste local.
+- Se confirmado lascamento: planejar reparo ou substituição do componente dentado; coletar registro vibracional pós-reparo para validar remoção do conteúdo de alta frequência.
+- Se inspeção inconclusiva, aumentar densidade de aquisição (amostragem temporal) e instalar sensor adicional no eixo X adjacente para localizar mais precisamente a fonte.
+
+
+Amostra explicada: 11
+Classe predita: 3 - Dente Lascado
+Probabilidade: 0.9967
+Tokens de entrada: 477
+Tokens de entrada em cache: 0
+Tokens de saida: 370
+Tokens totais: 847
+
+Interpretação Vibracional:
+A predição é fortemente suportada por aumento da largura da banda espectral no eixo X (valor 1178.9, maior impacto). O centróide espectral no eixo X está deslocado para ~1513 Hz, indicando energia concentrada em banda alta. Há presença, ainda que pequena, de energia relativa na faixa 2,5–5 kHz no eixo X; contribuição nas faixas mais baixas (300–600 Hz em Z e 0–50 Hz em X) é negligenciável. Portanto, a evidência vibracional aponta para conteúdo de alta frequência predominante no eixo X.
+
+Interpretação Mecânica:
+Alta concentração de energia em banda alta e alargamento de banda no eixo X é compatível com dano localizado em dente (lascação) que gera impactos e componentes espectrais de alta frequência no plano de contato. A indicação é sugestiva/consistente com dente lascado; dado o alto nível de confiança (0,9967) a interpretação é forte, porém sem inspeção visual a conclusão não é definitiva.
+
+Ações Recomendadas:
+- Parar ou reduzir carga para inspeção visual imediata do conjunto dentado ou engrenagem correspondente ao eixo X.
+- Realizar inspeção óptica/borescope focalizada nos dentes para confirmar lascagem.
+- Medir folgas / jogo entre dentes e sinalizar folga excessiva.
+- Monitoramento em curto prazo com aquisição de sinal de maior resolução em X e análise de impactos (time waveform) para quantificar severidade.
+- Se confirmar lascação significativa, programar reparo/substituição do componente dentado e rebalanço/alinhamento conforme necessário.
+
+
+
+---------------------------- AMOSTRA REAL CLASSE 4 -------------------------------------------------------------------------------------
+
+Amostra explicada: 12
+Classe predita: 4 - Dente Ausente
+Probabilidade: 0.9786
+Tokens de entrada: 479
+Tokens de entrada em cache: 0
+Tokens de saida: 328
+Tokens totais: 807
+
+Interpretação Vibracional:
+Elevada energia na faixa 600–1200 Hz no eixo X (valor 0.002519) com forte contribuição ao diagnóstico; também presença moderada de energia em 1200–2500 Hz no eixo Y. A largura de banda espectral no eixo Y é relativamente grande (1025 Hz) e tem pequena influência contrária. Em suma, eixo X apresenta o sinal mais relevante, especialmente no intervalo 600–1200 Hz.
+
+Interpretação Mecânica:
+Padrão sugestivo de perda de dente (classe indicada: Dente Ausente) devido à concentração de energia em harmônicos/intervalos de média-alta frequência no eixo X. A evidência é fortemente indicativa (probabilidade 97,86%), porém não completamente conclusiva sem inspeção física; a energia em outras bandas não contradiz esse cenário.
+
+Ações Recomendadas:
+- Parar ou reduzir carga e realizar inspeção visual/boroscópica imediata no componente dentado associado ao eixo X.  
+- Verificar alinhamento e acoplamentos próximos, documentando folgas e desgaste de dentes.  
+- Coletar ensaio vibracional em rotação estacionária e em carga após quaisquer ajustes para confirmar redução da energia 600–1200 Hz.  
+- Se confirmação visual de dente ausente ou dano relevante, programar reparo ou substituição do componente antes de retomada normal.  
+- Registrar medições e acompanhar evolução com novo checkpoint vibracional após intervenção.
+
+
+Amostra explicada: 13
+Classe predita: 4 - Dente Ausente
+Probabilidade: 0.9947
+Tokens de entrada: 476
+Tokens de entrada em cache: 0
+Tokens de saida: 478
+Tokens totais: 954
+
+Interpretação Vibracional:
+Nível de confiança alto (99.47%) para condição classificada como "Dente Ausente". Evidência vibracional concentra-se principalmente no eixo X na banda 600–1200 Hz, com aumento de energia nessa faixa (valor 0.002987) sendo o sinal mais influente. Há contribuição secundária do eixo Y em banda larga (largura espectral ≈ 970 Hz) e energia em 1200–2500 Hz no eixo Y. A energia em 2500–5000 Hz no eixo X está reduzida relativamente. Eixos mais relevantes: X (principal) e Y (secundário). Frequência crítica sugerida: 600–1200 Hz.
+
+Interpretação Mecânica:
+Padrão compatível com perda de um dente em componente engrenado ou roda dentada: aumento de energia na faixa 600–1200 Hz no eixo de medição principal (X) e aumento de conteúdo espectral no eixo Y indicam excitação periódica e aumento de banda devido ao impacto/irregularidade local. A redução relativa em alta frequência no X pode indicar perda do componente de excitação normal. Dado o alto nível de confiança, a interpretação é sugestiva de dente ausente; porém, sem inspeção visual/ultrassônica não é absolutamente confirmatória.
+
+Ações Recomendadas:
+- Parar ou reduzir carga conforme procedimento de segurança e programar inspeção visual imediata da engrenagem/roda dentada correspondente ao eixo X.
+- Inspeção detalhada: exame visual dos dentes, verificação de ausência/fragmento, e encaminhar peça para medição dimensional e avaliação de trincas em dente adjacente.
+- Medir vibração novamente após parada e registrar sinais em X e Y (600–1200 Hz e 1200–2500 Hz) para comparar.
+- Se confirmada perda de dente: substituir ou reparar componente antes de operação normal; inspecionar alinhamento e folgas de engrenamento para evitar dano adicional.
+- Se inspeção inconclusiva: realizar termografia e/ou endoscopia e planos de monitoramento de curta frequência (aumentar taxa de aquisição) até confirmação.
+
+
+Amostra explicada: 14
+Classe predita: 4 - Dente Ausente
+Probabilidade: 0.9975
+Tokens de entrada: 477
+Tokens de entrada em cache: 0
+Tokens de saida: 386
+Tokens totais: 863
+
+Interpretação Vibracional:
+Medições mostram elevação significativa de energia na faixa 600–1200 Hz no eixo X (valor 0,002876 com forte impacto na predição). Também há energia relevante em 1200–2500 Hz no eixo Y e largura de banda espectral aumentada no eixo Y. Eixo X é o mais crítico; bandas 600–1200 Hz e secundariamente 1200–2500 Hz são as mais indicativas.
+
+Interpretação Mecânica:
+Predição indica "Dente Ausente" com probabilidade muito alta (0,9975). O padrão vibracional — pico pronunciado em 600–1200 Hz no eixo X e presença em bandas mais altas no eixo Y — é compatível com perda de material/discontinuidade periódica na roda dentada (impactos/impulsos por passagem de dente faltante). A largura de banda aumentada no eixo Y sugere excitação de harmônicos e modulação associada à irregularidade de engrenamento. Esta é uma interpretação sugestiva/consistente com dente ausente dado o conjunto de evidências.
+
+Ações Recomendadas:
+- Parar máquina e inspeção visual da roda dentada e dentes próximos; verificar presença de dentes faltantes ou quebras.
+- Inspeção não-destrutiva (endoscopia ou boroscopia) se acesso direto for limitado.
+- Verificar alinhamento e folgas de engrenamento após inspeção do dente; medir backlash e folga de ponta de dente.
+- Avaliar necessidade de substituição ou reparo da engrenagem antes de retorno à operação.
+- Registrar medições vibracionais pós-reparo para confirmar redução da energia em 600–1200 Hz e normalização da largura de banda.
