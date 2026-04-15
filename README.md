@@ -1,38 +1,36 @@
-predictive_maintenance_fft_ml_xai_llm
+# predictive_maintenance_fft_ml_xai_llm
 
-Visão geral
+## Visão geral
 
-Este projeto aplica FFT, aprendizado de máquina, XAI e LLM para manutenção preditiva com sinais de vibração de uma caixa de engrenagens planetarias.
+- Este projeto aplica FFT, aprendizado de máquina, XAI e LLM para manutenção preditiva com sinais de vibração de uma caixa de engrenagens planetárias.
+- O fluxo principal do notebook cobre carregamento dos sinais, segmentação, análise espectral, extração de features, treino de modelos de classificação, explicabilidade com SHAP e geração opcional de texto técnico com a API da OpenAI.
 
-O fluxo principal do notebook cobre carregamento dos sinais, segmentação, análise espectral, extração de features, treino de modelos de classificação, explicabilidade com SHAP e geração opcional de texto tecnico com a API da OpenAI.
+## Notebook principal
 
-Notebook principal
+- `predictive_maintenance_fft_ml_xai_llm.ipynb`
 
-predictive_maintenance_fft_ml_xai_llm.ipynb
+## Problema tratado
 
-Problema tratado
+- O objetivo é classificar a condição da engrenagem solar do segundo estágio da caixa de engrenagens planetárias.
 
-O objetivo e classificar a condicao da engrenagem solar do segundo estágio da caixa de engrenagens planetarias.
+## Mapeamento atual dos rótulos
 
-Mapeamento atual dos rótulos
+- Classe 0: Normal
+- Classe 1: Desgaste Superficial
+- Classe 2: Dente Trincado
+- Classe 3: Dente Lascado
+- Classe 4: Dente Ausente
 
-Classe 0 = Normal
-Classe 1 = Desgaste Superficial
-Classe 2 = Dente Trincado
-Classe 3 = Dente Lascado
-Classe 4 = Dente Ausente
+## Dados
 
-Dados
+- Os arquivos do dataset devem ficar dentro da pasta `data`.
+- Substitua o campo abaixo pelo link real para download dos arquivos.
 
-Os arquivos do dataset devem ficar dentro da pasta data.
+Link do Drive:
 
-Link do Drive
+`https://drive.google.com/drive/folders/1eJWnxC4rEQXuOxAbNJ6IErWKJHqsXry0?usp=drive_link`
 
-https://drive.google.com/drive/folders/1eJWnxC4rEQXuOxAbNJ6IErWKJHqsXry0?usp=sharing
-
-Depois de baixar os arquivos, crie a pasta data caso ela não exista e copie os arquivos para dentro dela.
-
-Estrutura esperada
+### Estrutura esperada
 
 ```text
 data/
@@ -42,29 +40,28 @@ data/
   gt_1500_10.npy
 ```
 
-Descrição rapida dos arquivos
+### Descrição rápida dos arquivos
 
-x_1500_10.npy contem o sinal de vibracao do eixo X
-y_1500_10.npy contem o sinal de vibracao do eixo Y
-z_1500_10.npy contem o sinal de vibracao do eixo Z
-gt_1500_10.npy contem os rotulos das classes
+- `x_1500_10.npy`: sinal de vibração do eixo X
+- `y_1500_10.npy`: sinal de vibração do eixo Y
+- `z_1500_10.npy`: sinal de vibração do eixo Z
+- `gt_1500_10.npy`: rótulos das classes
 
-Ambiente
+## Ambiente
 
-O projeto usa Python com dependencias listadas em requirements.txt.
+- O projeto usa Python com as dependências listadas em `requirements.txt`.
+- Para usar a parte de LLM, copie `.env.example` para `.env` e preencha sua chave da OpenAI.
 
-Para usar a parte de LLM, copie .env.example para .env e preencha sua chave da OpenAI.
-
-Arquivo de exemplo
+### Exemplo de `.env`
 
 ```text
 OPENAI_API_KEY=cole_sua_chave_aqui
 OPENAI_MODEL=gpt-5-mini
 ```
 
-Como executar
+## Como executar
 
-No Windows PowerShell:
+### No Windows PowerShell
 
 ```powershell
 python -m venv .venv
@@ -75,42 +72,46 @@ New-Item -ItemType Directory -Path data -Force
 jupyter notebook
 ```
 
-Depois abra o arquivo predictive_maintenance_fft_ml_xai_llm.ipynb e execute as células em ordem.
+### Depois disso
 
-Etapas do notebook
+- Baixe os arquivos do dataset.
+- Copie os arquivos para dentro da pasta `data`.
+- Abra `predictive_maintenance_fft_ml_xai_llm.ipynb`.
+- Execute as células em ordem.
 
-Carregamento dos sinais de vibração por eixo
-Visualização no dominio do tempo
-Segmentação em janelas
-FFT classição por segmento
-Extração de features no tempo e na frequencia
-Treino dos modelos RandomForest, XGBoost e SVM
-Matriz de confusão e curva ROC
-Explicabilidade local com SHAP
-Geração opcional de texto tecnico com a OpenAI API
+## Etapas do notebook
 
-Saídas geradas
+- Carregamento dos sinais de vibração por eixo
+- Visualização no domínio do tempo
+- Segmentação em janelas
+- FFT clássica por segmento
+- Extração de features no tempo e na frequência
+- Treino dos modelos RandomForest, XGBoost e SVM
+- Matriz de confusão e curva ROC
+- Explicabilidade local com SHAP
+- Geração opcional de texto técnico com a OpenAI API
 
-As imagens geradas pelo notebook são salvas na pasta images.
+## Saídas geradas
 
-Exemplos de saída
+- As imagens geradas pelo notebook são salvas na pasta `images`.
 
-Graficos dos sinais por classe
-Graficos de FFT
-Matrizes de confusao
-Curvas ROC
-Graficos SHAP locais
+### Exemplos de saída
 
-Observação sobre a parte de LLM
+- Gráficos dos sinais por classe
+- Gráficos de FFT
+- Matrizes de confusão
+- Curvas ROC
+- Gráficos SHAP locais
 
-Se você quiser executar o notebook sem consumir a API da OpenAI, altere a variavel gerar_explicacoes_llm para False nas celulas finais.
+## Uso da parte de LLM
 
-Se você quiser gerar a explicação, mantenha gerar_explicacoes_llm como True e selecione a amostra desejada em amostra_explicacao_llm.
+- Para executar o notebook sem consumir a API da OpenAI, altere `gerar_explicacoes_llm` para `False` nas células finais.
+- Para gerar a explicação, mantenha `gerar_explicacoes_llm` como `True`.
+- Selecione a amostra desejada em `amostra_explicacao_llm`.
 
-Arquivos principais do repositorio
+## Arquivos principais do repositório
 
-predictive_maintenance_fft_ml_xai_llm.ipynb
-requirements.txt
-.env.example
-README.md
-
+- `predictive_maintenance_fft_ml_xai_llm.ipynb`
+- `requirements.txt`
+- `.env.example`
+- `README.md`
