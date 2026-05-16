@@ -7,3 +7,6 @@ xgboost
 shap
 openai
 notebook
+ollama
+fastapi
+uvicorn

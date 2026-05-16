@@ -3,4 +3,10 @@
 /data
 /backup
 /.venv
+/venv
 /.env
+/backend/app/__pycache__/
+/frontend/node_modules/
+/frontend/dist/
+/outputs/model_artifacts/
+/outputs/llm_feature_audits/
