@@ -4,3 +4,4 @@
 /backup
 /.venv
 /.env
+/catboost_info
