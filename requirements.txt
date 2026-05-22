@@ -9,3 +9,5 @@ lightgbm
 shap
 openai
 notebook
+fastapi
+uvicorn

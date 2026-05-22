@@ -5,3 +5,5 @@ documento_referencia
 /.venv
 /.env
 catboost_info
+/outputs
+__pycache__
