@@ -1,7 +1,7 @@
 /images
-/documento_referencia
+documento_referencia
 /data
 /backup
 /.venv
 /.env
-/catboost_info
+catboost_info
