@@ -13,6 +13,7 @@ from .fft_service import (
     AMOSTRAS_POR_JANELA,
     FS,
     calculate_kinematic_params,
+    compute_crest_factor,
     compute_fft,
     compute_kurtosis,
     compute_peak_value,
@@ -20,7 +21,7 @@ from .fft_service import (
     extract_window_signal,
 )
 from .llm_service import LocalLlamaExplanationService
-from .model_service import SimplifiedLightGBMService
+from .model_service import SimplifiedTabularModelService
 from .sample_service import SampleRepository
 from .schemas import (
     ExplainRequest,
@@ -57,7 +58,7 @@ MAPA_CLASSES = {
 
 app = FastAPI(title="Rock Pi FFT Viewer", version="0.1.0")
 repo = SampleRepository(SAMPLE_DIR)
-model_service = SimplifiedLightGBMService(MODEL_ARTIFACTS_DIR, MAPA_CLASSES)
+model_service = SimplifiedTabularModelService(MODEL_ARTIFACTS_DIR, MAPA_CLASSES)
 llm_service = LocalLlamaExplanationService()
 
 app.add_middleware(
@@ -74,6 +75,7 @@ def health() -> dict[str, str]:
     return {
         "status": "ok",
         "model_available": "true" if model_service.available else "false",
+        "model_type": model_service.model_type or "",
     }
 
 
@@ -192,6 +194,7 @@ def get_features(request: FeatureRequest) -> FeatureResponse:
         rms=compute_rms(signal),
         kurtosis=compute_kurtosis(signal),
         peak_value=compute_peak_value(signal),
+        crest_factor=compute_crest_factor(signal),
     )
 
 

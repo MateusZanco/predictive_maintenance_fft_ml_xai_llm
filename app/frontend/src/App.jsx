@@ -192,6 +192,10 @@ function FeaturePanel({ data }) {
         <strong>Peak Value</strong>
         <span>{data.peak_value.toFixed(6)}</span>
       </div>
+      <div style={featureCardStyle}>
+        <strong>Crest Factor</strong>
+        <span>{data.crest_factor.toFixed(6)}</span>
+      </div>
     </div>
   );
 }
@@ -266,6 +270,7 @@ function ShapPanel({ data, error }) {
             <th style={{ textAlign: "right", padding: "8px 6px", borderBottom: "1px solid #d7e0e5" }}>Valor</th>
             <th style={{ textAlign: "right", padding: "8px 6px", borderBottom: "1px solid #d7e0e5" }}>SHAP</th>
             <th style={{ textAlign: "right", padding: "8px 6px", borderBottom: "1px solid #d7e0e5" }}>|SHAP|</th>
+            <th style={{ textAlign: "right", padding: "8px 6px", borderBottom: "1px solid #d7e0e5" }}>%</th>
           </tr>
         </thead>
         <tbody>
@@ -281,6 +286,9 @@ function ShapPanel({ data, error }) {
               </td>
               <td style={{ padding: "8px 6px", borderBottom: "1px solid #eef3f6", textAlign: "right" }}>
                 {item.impact_abs.toFixed(6)}
+              </td>
+              <td style={{ padding: "8px 6px", borderBottom: "1px solid #eef3f6", textAlign: "right" }}>
+                {item.impact_pct.toFixed(1)}%
               </td>
             </tr>
           ))}

@@ -75,6 +75,7 @@ class FeatureResponse(BaseModel):
     rms: float
     kurtosis: float
     peak_value: float
+    crest_factor: float
 
 
 class PredictRequest(BaseModel):
@@ -110,6 +111,7 @@ class ShapContribution(BaseModel):
     feature_value: float
     shap_value: float
     impact_abs: float
+    impact_pct: float
 
 
 class ShapResponse(BaseModel):

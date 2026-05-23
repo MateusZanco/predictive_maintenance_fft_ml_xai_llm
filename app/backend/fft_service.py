@@ -85,3 +85,42 @@ def compute_kurtosis(signal: np.ndarray) -> float:
 
 def compute_peak_value(signal: np.ndarray) -> float:
     return float(np.max(np.abs(signal)))
+
+
+def compute_crest_factor(signal: np.ndarray) -> float:
+    rms = compute_rms(signal)
+    peak = compute_peak_value(signal)
+    return float(peak / (rms + 1e-12))
+
+
+def compute_amplitude_spectrum(signal: np.ndarray, apply_hann: bool = True) -> tuple[np.ndarray, np.ndarray]:
+    centered = signal - np.mean(signal)
+    if apply_hann:
+        window = np.hanning(signal.shape[0])
+        processed = centered * window
+        norm = signal.shape[0]
+    else:
+        processed = centered
+        norm = signal.shape[0]
+
+    spectrum = np.fft.rfft(processed)
+    amplitude = (2.0 / norm) * np.abs(spectrum)
+    amplitude[0] = 0.0
+    freq = np.fft.rfftfreq(signal.shape[0], d=1 / FS)
+    return freq, amplitude
+
+
+def extract_band_metrics(
+    freq: np.ndarray,
+    amplitude: np.ndarray,
+    center_hz: float,
+    half_width_hz: float,
+) -> tuple[float, float]:
+    mask = (freq >= (center_hz - half_width_hz)) & (freq <= (center_hz + half_width_hz))
+    if not np.any(mask):
+        return 0.0, 0.0
+
+    band = amplitude[mask]
+    band_energy = float(np.sum(np.square(band)))
+    band_peak = float(np.max(band))
+    return band_energy, band_peak
