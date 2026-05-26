@@ -5,6 +5,7 @@ import os
 import socket
 from typing import Any
 from urllib import error, request
+from xml.sax.saxutils import escape
 
 
 class LocalLlamaExplanationService:
@@ -27,55 +28,74 @@ class LocalLlamaExplanationService:
     ) -> tuple[str, str, list[dict[str, str]]]:
         del condicao_operacao
 
-        system_prompt = """<ROLE>
-You are a specialist in vibration analysis for planetary gearboxes.
-</ROLE>
-
-<STRICT_RULES>
-- Use only the provided evidence list.
-- The evidence list contains exactly the provided items and no other hidden evidence.
-- Do not invent frequencies, causes, severity, numeric ranges, thresholds, extreme conditions, mechanical stress, tension, or symptoms.
-- If no explicit reference range is provided, never say normal, abnormal, elevated, reduced, within range, or outside range.
-- Do not create numeric limits such as "0.10 to 0.20" or similar.
-- Mention only concepts supported by variable families present in the evidence list.
-- Without RMS, do not mention global vibration level.
-- Without kurtosis, do not mention impulsiveness.
-- Without peak value, do not mention peak amplitude in the time signal.
-- Without crest factor, do not mention the relationship between peak and RMS.
-- Without harmonic energy features, do not mention concentration of energy in harmonic bands.
-- Without maximum harmonic amplitude features, do not mention maximum spectral amplitude in a harmonic band.
-- Do not mention imbalance, misalignment, looseness, wear progression, mechanical stress, or other specific mechanisms unless they are explicitly supported by the evidence.
-- Do not use generic expressions such as "high-frequency components", "system response", or "system behavior" unless they are directly supported by the evidence block.
-- If the evidence is limited, use cautious language such as "compatible with" or "suggests".
-- Prefer citing the highest-ranked evidence items first.
-- When 3 or more evidence items are provided, mention at least 3 of them in interpretacao_vibracional.
-- Treat every percentage in the evidence list as an approximate share of absolute local explanatory impact, not as probability share.
-- Do not mention SHAP, model, AI, or prompt.
-- Do not provide recommended actions.
-- Write the final answer only in Brazilian Portuguese.
-</STRICT_RULES>
-
-<OUTPUT_FORMAT>
-Return only valid JSON in this format:
-{
+        system_prompt = """<SYSTEM_PROMPT>
+  <ROLE>You are a specialist in vibration analysis for planetary gearboxes.</ROLE>
+  <STRICT_RULES>
+    <RULE>Use only the provided evidence list.</RULE>
+    <RULE>The evidence list contains exactly the provided items and no other hidden evidence.</RULE>
+    <RULE>Do not invent frequencies, causes, severity, numeric ranges, thresholds, extreme conditions, mechanical stress, tension, or symptoms.</RULE>
+    <RULE>If no explicit reference range is provided, never say normal, abnormal, elevated, reduced, within range, or outside range.</RULE>
+    <RULE>Do not create numeric limits such as "0.10 to 0.20" or similar.</RULE>
+    <RULE>Mention only concepts supported by variable families present in the evidence list.</RULE>
+    <RULE>Without RMS, do not mention global vibration level.</RULE>
+    <RULE>Without kurtosis, do not mention impulsiveness.</RULE>
+    <RULE>Without peak value, do not mention peak amplitude in the time signal.</RULE>
+    <RULE>Without crest factor, do not mention the relationship between peak and RMS.</RULE>
+    <RULE>Without harmonic energy features, do not mention concentration of energy in harmonic bands.</RULE>
+    <RULE>Without maximum harmonic amplitude features, do not mention maximum spectral amplitude in a harmonic band.</RULE>
+    <RULE>Do not mention imbalance, misalignment, looseness, wear progression, mechanical stress, or other specific mechanisms unless they are explicitly supported by the evidence.</RULE>
+    <RULE>Do not use generic expressions such as "high-frequency components", "system response", or "system behavior" unless they are directly supported by the evidence block.</RULE>
+    <RULE>If the evidence is limited, use cautious language such as "compatible with" or "suggests".</RULE>
+    <RULE>Prefer citing the highest-ranked evidence items first.</RULE>
+    <RULE>When 3 or more evidence items are provided, mention at least 3 of them in interpretacao_vibracional.</RULE>
+    <RULE>Treat every percentage in the evidence list as an approximate share of absolute local explanatory impact, not as probability share.</RULE>
+    <RULE>Do not produce checklist-style summaries of all possible concept groups.</RULE>
+    <RULE>Do not use parenthetical qualifiers such as "if applicable" or "se aplicável".</RULE>
+    <RULE>In interpretacao_vibracional, mention only the concepts directly supported by the evidence items actually listed in the current window.</RULE>
+    <RULE>If the predicted class is Normal, do not describe the result as a fault confirmation or as compatibility with a specific fault mechanism.</RULE>
+    <RULE>Do not mention SHAP, model, AI, or prompt.</RULE>
+    <RULE>Do not provide recommended actions.</RULE>
+    <RULE>Write the final answer only in Brazilian Portuguese.</RULE>
+    <RULE>Do not reveal the internal procedure. Return only the final JSON.</RULE>
+  </STRICT_RULES>
+  <PROCEDURE>
+    <STEP index="1">Read only the evidence items listed in OBSERVED_EVIDENCE.</STEP>
+    <STEP index="2">Identify which variable families are present in the evidence list.</STEP>
+    <STEP index="3">Map each present variable family to its allowed concept.</STEP>
+    <STEP index="4">Ignore any concept whose variable family is absent.</STEP>
+    <STEP index="5">Write interpretacao_vibracional citing the highest-ranked evidence items first, with variable value and approximate local importance.</STEP>
+    <STEP index="6">If you write a final synthesis sentence in interpretacao_vibracional, include only concept groups supported by the listed evidence.</STEP>
+    <STEP index="7">If the predicted class is Normal, write interpretacao_mecanica using the Normal-specific instruction from TASK and include the predicted class probability.</STEP>
+    <STEP index="8">If the predicted class is not Normal, write interpretacao_mecanica only as compatibility with the predicted class, using cautious wording, and include the predicted class probability.</STEP>
+    <STEP index="9">Return only valid JSON.</STEP>
+  </PROCEDURE>
+  <OUTPUT_FORMAT>
+    <TYPE>Return only valid JSON.</TYPE>
+    <JSON_TEMPLATE>{
   "interpretacao_vibracional": "...",
   "interpretacao_mecanica": "..."
-}
-</OUTPUT_FORMAT>"""
+}</JSON_TEMPLATE>
+  </OUTPUT_FORMAT>
+</SYSTEM_PROMPT>"""
 
         fixed_user_prefix = self._fixed_user_prefix()
-        evidence_lines = [f"{idx}. {self._describe_contribution(item)}" for idx, item in enumerate(top_contributions, start=1)]
+        evidence_lines = [
+            f'    <EVIDENCE index="{idx}">{escape(self._describe_contribution(item))}</EVIDENCE>'
+            for idx, item in enumerate(top_contributions, start=1)
+        ]
+        final_instruction = "Be even more brief and direct." if concise else "Generate the final explanation."
 
-        user_prompt = f"""{fixed_user_prefix}
-
-<CURRENT_WINDOW>
-<PREDICTED_CLASS>{predicted_class_name}</PREDICTED_CLASS>
-<PREDICTED_CLASS_PROBABILITY>{predicted_probability:.4f}</PREDICTED_CLASS_PROBABILITY>
-<OBSERVED_EVIDENCE>
+        user_prompt = f"""<USER_PROMPT>
+{fixed_user_prefix}
+  <INPUT_DATA>
+    <PREDICTED_CLASS>{escape(predicted_class_name)}</PREDICTED_CLASS>
+    <PREDICTED_CLASS_PROBABILITY>{predicted_probability:.4f}</PREDICTED_CLASS_PROBABILITY>
+    <OBSERVED_EVIDENCE>
 {chr(10).join(evidence_lines)}
-</OBSERVED_EVIDENCE>
-<FINAL_INSTRUCTION>{"Be even more brief and direct." if concise else "Generate the final explanation."}</FINAL_INSTRUCTION>
-</CURRENT_WINDOW>"""
+    </OBSERVED_EVIDENCE>
+    <FINAL_INSTRUCTION>{escape(final_instruction)}</FINAL_INSTRUCTION>
+  </INPUT_DATA>
+</USER_PROMPT>"""
 
         messages = [{"role": "system", "content": system_prompt}]
         if prompt_strategy == "few_shot":
@@ -170,19 +190,20 @@ Return only valid JSON in this format:
     def _few_shot_examples(self) -> list[dict[str, str]]:
         fixed_user_prefix = self._fixed_user_prefix()
 
-        example_user = f"""{fixed_user_prefix}
-
-<CURRENT_WINDOW>
-<PREDICTED_CLASS>Dente Trincado</PREDICTED_CLASS>
-<PREDICTED_CLASS_PROBABILITY>0.9925</PREDICTED_CLASS_PROBABILITY>
-<OBSERVED_EVIDENCE>
-1. RMS on axis Y = 0.214310; contributed positively to the predicted class; approximate local importance = 28.7%.
-2. energy around harmonic 1 of Fm2 on axis X = 0.004812; contributed positively to the predicted class; approximate local importance = 24.9%.
-3. maximum amplitude around harmonic 2 of Fm2 on axis Z = 0.021334; contributed positively to the predicted class; approximate local importance = 19.8%.
-4. crest factor on axis Z = 5.184220; contributed positively to the predicted class; approximate local importance = 11.5%.
-</OBSERVED_EVIDENCE>
-<FINAL_INSTRUCTION>Generate the final explanation.</FINAL_INSTRUCTION>
-</CURRENT_WINDOW>"""
+        example_user = f"""<USER_PROMPT>
+{fixed_user_prefix}
+  <INPUT_DATA>
+    <PREDICTED_CLASS>Dente Trincado</PREDICTED_CLASS>
+    <PREDICTED_CLASS_PROBABILITY>0.9925</PREDICTED_CLASS_PROBABILITY>
+    <OBSERVED_EVIDENCE>
+      <EVIDENCE index="1">RMS on axis Y = 0.214310; contributed positively to the predicted class; approximate local importance = 28.7%.</EVIDENCE>
+      <EVIDENCE index="2">energy around harmonic 1 of Fm2 on axis X = 0.004812; contributed positively to the predicted class; approximate local importance = 24.9%.</EVIDENCE>
+      <EVIDENCE index="3">maximum amplitude around harmonic 2 of Fm2 on axis Z = 0.021334; contributed positively to the predicted class; approximate local importance = 19.8%.</EVIDENCE>
+      <EVIDENCE index="4">crest factor on axis Z = 5.184220; contributed positively to the predicted class; approximate local importance = 11.5%.</EVIDENCE>
+    </OBSERVED_EVIDENCE>
+    <FINAL_INSTRUCTION>Generate the final explanation.</FINAL_INSTRUCTION>
+  </INPUT_DATA>
+</USER_PROMPT>"""
 
         example_assistant = """{
   "interpretacao_vibracional": "A janela mostra RMS no eixo Y = 0.214310, com importância local aproximada de 28.7%, energia em torno da harmônica 1 de Fm2 no eixo X = 0.004812, com 24.9%, amplitude máxima em torno da harmônica 2 de Fm2 no eixo Z = 0.021334, com 19.8%, e crest factor no eixo Z = 5.184220, com 11.5%. Essas evidências descrevem contribuições associadas ao nível global de vibração, à concentração de energia em bandas harmônicas, à amplitude máxima em banda harmônica e à relação entre pico e RMS nesta janela.",
@@ -195,58 +216,60 @@ Return only valid JSON in this format:
         ]
 
     def _fixed_user_prefix(self) -> str:
-        return """<FIXED_CONTEXT>
-- Equipment: two-stage planetary gearbox.
-- Monitored component: second-stage sun gear.
-</FIXED_CONTEXT>
-
-<VARIABLE_LEGEND>
-<TIME_DOMAIN_VARIABLES>
-- RMS: global vibration level of the segment on the analyzed axis.
-- kurtosis: impulsiveness of the time signal on the analyzed axis.
-- peak value: highest absolute amplitude observed in the segment on the analyzed axis.
-- crest factor: ratio between peak value and RMS on the analyzed axis.
-</TIME_DOMAIN_VARIABLES>
-<FREQUENCY_DOMAIN_HARMONIC_BAND_VARIABLES>
-- energy around an Fm1 harmonic: spectral energy inside a +/-10 Hz band around a first-stage gear mesh harmonic.
-- energy around an Fm2 harmonic: spectral energy inside a +/-10 Hz band around a second-stage gear mesh harmonic.
-- maximum amplitude around an Fm1 harmonic: highest spectral amplitude inside a +/-10 Hz band around an Fm1 harmonic.
-- maximum amplitude around an Fm2 harmonic: highest spectral amplitude inside a +/-10 Hz band around an Fm2 harmonic.
-</FREQUENCY_DOMAIN_HARMONIC_BAND_VARIABLES>
-<ATTRIBUTION_TERMS>
-- "contributed positively to the predicted class": this variable pushed the model toward the predicted class.
-- "contributed negatively to the predicted class": this variable pushed the model away from the predicted class.
-- approximate local importance: approximate share of absolute local explanatory impact attributed to that variable in the current window.
-</ATTRIBUTION_TERMS>
-</VARIABLE_LEGEND>
-
-<INTERPRETATION_MAPPING_RULES>
-- RMS allows mentioning global vibration level.
-- kurtosis allows mentioning impulsiveness of the time signal.
-- peak value allows mentioning peak amplitude in the time signal.
-- crest factor allows mentioning the relationship between peak value and RMS.
-- energy around an Fm1 or Fm2 harmonic allows mentioning concentration of energy inside harmonic bands.
-- maximum amplitude around an Fm1 or Fm2 harmonic allows mentioning the highest spectral amplitude inside a harmonic band.
-- Use only concepts associated with variable families present in the evidence block.
-- If a variable family is absent, do not mention the concept associated with it.
-- Example: without kurtosis, do not mention impulsiveness.
-- Example: without peak value, do not mention peak amplitude in the time signal.
-- Example: without harmonic energy, do not mention concentration of energy inside harmonic bands.
-- Example: without maximum harmonic amplitude, do not mention the highest spectral amplitude inside a harmonic band.
-</INTERPRETATION_MAPPING_RULES>
-
-<TASK>
-- interpretacao_vibracional: describe only the observed variables and their axes or harmonics.
-- When useful, explicitly cite the variable value and the approximate local importance percentage.
-- Prefer literal descriptions of the reported variables instead of generic summaries.
-- Distinguish clearly between time-domain variables and frequency-domain harmonic-band variables when describing the evidence.
-- interpretacao_mecanica: state only whether the evidence is compatible with the predicted class, using cautious wording.
-- If the predicted class is Normal, state that the main evidence in this window did not indicate predominance of a pattern compatible with the modeled fault classes.
-- If the predicted class is not Normal, do not present the fault class as confirmed; use language compatible with or suggestive of the predicted class.
-- Do not compare with normal ranges, reference limits, or expected values.
-- Do not mention operating condition, rotation, torque, or reduction ratio unless they appear explicitly in the variable block.
-- If a variable family is absent from the evidence, avoid introducing the associated concept.
-</TASK>"""
+        return """  <FIXED_CONTEXT>
+    <EQUIPMENT>two-stage planetary gearbox</EQUIPMENT>
+    <MONITORED_COMPONENT>second-stage sun gear</MONITORED_COMPONENT>
+  </FIXED_CONTEXT>
+  <VARIABLE_LEGEND>
+    <TIME_DOMAIN_VARIABLES>
+      <VARIABLE name="RMS">global vibration level of the segment on the analyzed axis</VARIABLE>
+      <VARIABLE name="kurtosis">impulsiveness of the time signal on the analyzed axis</VARIABLE>
+      <VARIABLE name="peak_value">highest absolute amplitude observed in the segment on the analyzed axis</VARIABLE>
+      <VARIABLE name="crest_factor">ratio between peak value and RMS on the analyzed axis</VARIABLE>
+    </TIME_DOMAIN_VARIABLES>
+    <FREQUENCY_DOMAIN_HARMONIC_BAND_VARIABLES>
+      <VARIABLE name="energy_around_Fm1_harmonic">spectral energy inside a +/-10 Hz band around a first-stage gear mesh harmonic</VARIABLE>
+      <VARIABLE name="energy_around_Fm2_harmonic">spectral energy inside a +/-10 Hz band around a second-stage gear mesh harmonic</VARIABLE>
+      <VARIABLE name="maximum_amplitude_around_Fm1_harmonic">highest spectral amplitude inside a +/-10 Hz band around an Fm1 harmonic</VARIABLE>
+      <VARIABLE name="maximum_amplitude_around_Fm2_harmonic">highest spectral amplitude inside a +/-10 Hz band around an Fm2 harmonic</VARIABLE>
+    </FREQUENCY_DOMAIN_HARMONIC_BAND_VARIABLES>
+    <ATTRIBUTION_TERMS>
+      <TERM name="contributed_positively">this variable pushed the model toward the predicted class</TERM>
+      <TERM name="contributed_negatively">this variable pushed the model away from the predicted class</TERM>
+      <TERM name="approximate_local_importance">approximate share of absolute local explanatory impact attributed to that variable in the current window</TERM>
+    </ATTRIBUTION_TERMS>
+  </VARIABLE_LEGEND>
+  <INTERPRETATION_MAPPING_RULES>
+    <RULE>RMS allows mentioning global vibration level.</RULE>
+    <RULE>kurtosis allows mentioning impulsiveness of the time signal.</RULE>
+    <RULE>peak value allows mentioning peak amplitude in the time signal.</RULE>
+    <RULE>crest factor allows mentioning the relationship between peak value and RMS.</RULE>
+    <RULE>energy around an Fm1 or Fm2 harmonic allows mentioning concentration of energy inside harmonic bands.</RULE>
+    <RULE>maximum amplitude around an Fm1 or Fm2 harmonic allows mentioning the highest spectral amplitude inside a harmonic band.</RULE>
+    <RULE>Use only concepts associated with variable families present in the evidence block.</RULE>
+    <RULE>If a variable family is absent, do not mention the concept associated with it.</RULE>
+    <RULE>Do not summarize absent concepts as optional or hypothetical concepts.</RULE>
+    <RULE>Without kurtosis, do not mention impulsiveness.</RULE>
+    <RULE>Without peak value, do not mention peak amplitude in the time signal.</RULE>
+    <RULE>Without harmonic energy, do not mention concentration of energy inside harmonic bands.</RULE>
+    <RULE>Without maximum harmonic amplitude, do not mention the highest spectral amplitude inside a harmonic band.</RULE>
+    <RULE>Without crest factor, do not mention the relationship between peak and RMS in any synthesis sentence.</RULE>
+  </INTERPRETATION_MAPPING_RULES>
+  <TASK>
+    <ITEM target="interpretacao_vibracional">Describe only the observed variables and their axes or harmonics.</ITEM>
+    <ITEM target="interpretacao_vibracional">When useful, explicitly cite the variable value and the approximate local importance percentage.</ITEM>
+    <ITEM target="interpretacao_vibracional">Prefer literal descriptions of the reported variables instead of generic summaries.</ITEM>
+    <ITEM target="interpretacao_vibracional">Distinguish clearly between time-domain variables and frequency-domain harmonic-band variables when describing the evidence.</ITEM>
+    <ITEM target="interpretacao_vibracional">If you write a final synthesis sentence, include only concept groups directly supported by the evidence listed in INPUT_DATA.</ITEM>
+    <ITEM target="interpretacao_vibracional">Never mention impulsiveness, peak amplitude in the time signal, relationship between peak and RMS, concentration of energy in harmonic bands, or maximum spectral amplitude in a harmonic band unless the corresponding variable family appears explicitly in OBSERVED_EVIDENCE.</ITEM>
+    <ITEM target="interpretacao_mecanica">State only whether the evidence is compatible with the predicted class, using cautious wording.</ITEM>
+    <ITEM target="interpretacao_mecanica">Include the predicted class probability as "probabilidade estimada de X% para a classe predita".</ITEM>
+    <ITEM target="interpretacao_mecanica">If the predicted class is Normal, start with exactly: "A principal evidência nesta janela não indicou predominância de um padrão compatível com as classes de falha modeladas."</ITEM>
+    <ITEM target="interpretacao_mecanica">If the predicted class is not Normal, do not present the fault class as confirmed; use language compatible with or suggestive of the predicted class.</ITEM>
+    <ITEM target="general">Do not compare with normal ranges, reference limits, or expected values.</ITEM>
+    <ITEM target="general">Do not mention operating condition, rotation, torque, or reduction ratio unless they appear explicitly in the input data.</ITEM>
+    <ITEM target="general">If a variable family is absent from the evidence, avoid introducing the associated concept.</ITEM>
+  </TASK>"""
 
     def _describe_contribution(self, item: dict[str, Any]) -> str:
         feature = str(item["feature"])
