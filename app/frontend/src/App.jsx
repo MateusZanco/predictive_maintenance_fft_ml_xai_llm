@@ -1,6 +1,16 @@
 import { useEffect, useRef, useState } from "react";
 import Plotly from "plotly.js-dist-min";
-import { fetchExplanation, fetchFeatures, fetchFft, fetchPrediction, fetchSampleMeta, fetchSamples, fetchShap, fetchSignal } from "./api";
+import {
+  fetchExplanation,
+  fetchFeatures,
+  fetchFft,
+  fetchPrediction,
+  fetchSampleMeta,
+  fetchSamples,
+  fetchShap,
+  fetchSignal,
+  fetchSystemStatus
+} from "./api";
 
 const fieldStyle = {
   display: "grid",
@@ -14,14 +24,6 @@ const panelStyle = {
   borderRadius: 16,
   padding: 20,
   boxShadow: "0 12px 30px rgba(16, 33, 43, 0.08)"
-};
-
-const presetButtonStyle = {
-  padding: "8px 12px",
-  borderRadius: 999,
-  border: "1px solid #cbd5db",
-  background: "#f8fbfc",
-  cursor: "pointer"
 };
 
 const featureCardStyle = {
@@ -61,6 +63,25 @@ const explanationPanelStyle = {
   gap: 12
 };
 
+const timingPanelStyle = {
+  background: "#f7f9ff",
+  border: "1px solid #d7def7",
+  borderRadius: 14,
+  padding: 16,
+  display: "grid",
+  gap: 12
+};
+
+const telemetryCardStyle = {
+  background: "#f5fafb",
+  border: "1px solid #d7e0e5",
+  borderRadius: 14,
+  padding: 16,
+  display: "grid",
+  gap: 6,
+  minWidth: 180
+};
+
 function buildHarmonicTraces(baseFrequency, maxFrequency, color, familyName) {
   const traces = [];
   for (let order = 2; order <= 5; order += 1) {
@@ -76,7 +97,7 @@ function buildHarmonicTraces(baseFrequency, maxFrequency, color, familyName) {
       name: order === 2 ? familyName : `${familyName} h${order}`,
       showlegend: order === 2,
       hovertemplate: `${familyName} h${order}: ${harmonicFrequency.toFixed(2)} Hz<extra></extra>`,
-      line: { color, dash: "dot", width: 1 }
+      line: { color, dash: "dot", width: 2.2 }
     });
   }
   return traces;
@@ -91,8 +112,8 @@ function FftChart({ data }) {
     const ymax = Math.max(...data.amp, 0);
     const maxFrequency = Math.max(...data.freq, 0);
     const harmonicTraces = [
-      ...buildHarmonicTraces(data.fm1, maxFrequency, "#fab005", "Harmonicas Fm1"),
-      ...buildHarmonicTraces(data.fm2, maxFrequency, "#51cf66", "Harmonicas Fm2")
+      ...buildHarmonicTraces(data.fm1, maxFrequency, "#e03131", "Harmonicas Fm1"),
+      ...buildHarmonicTraces(data.fm2, maxFrequency, "#1b5e20", "Harmonicas Fm2")
     ].map((trace) => ({
       ...trace,
       y: [0, ymax]
@@ -115,7 +136,7 @@ function FftChart({ data }) {
           type: "scatter",
           mode: "lines",
           name: "Fm1",
-          line: { color: "#f08c00", dash: "dash" }
+          line: { color: "#e03131", dash: "dash", width: 3 }
         },
         {
           x: [data.fm2, data.fm2],
@@ -123,7 +144,7 @@ function FftChart({ data }) {
           type: "scatter",
           mode: "lines",
           name: "Fm2",
-          line: { color: "#2f9e44", dash: "dash" }
+          line: { color: "#1b5e20", dash: "dash", width: 3 }
         },
         ...harmonicTraces
       ],
@@ -298,11 +319,51 @@ function ShapPanel({ data, error }) {
   );
 }
 
-function ExplanationPanel({ data, error, loading, onGenerate, disabled }) {
+function TimingPanel({ predictionData, shapData, explanationData, explanationLoading, explanationElapsedSeconds }) {
+  const featureTime = shapData?.feature_extraction_seconds ?? predictionData?.feature_extraction_seconds;
+  const inferenceTime = shapData?.model_inference_seconds ?? predictionData?.model_inference_seconds;
+  const shapTime = shapData?.shap_inference_seconds;
+  const llmTime = explanationLoading ? explanationElapsedSeconds : explanationData?.llm_processing_seconds;
+
+  if (featureTime === undefined && inferenceTime === undefined && shapTime === undefined && llmTime === undefined) {
+    return null;
+  }
+
+  return (
+    <div style={timingPanelStyle}>
+      <strong>Tempos de processamento</strong>
+      <div>Extração de Features: {featureTime !== undefined ? `${Number(featureTime).toFixed(3)} s` : "n/d"}</div>
+      <div>Inferência do Modelo: {inferenceTime !== undefined ? `${Number(inferenceTime).toFixed(3)} s` : "n/d"}</div>
+      <div>SHAP: {shapTime !== undefined ? `${Number(shapTime).toFixed(3)} s` : "n/d"}</div>
+      <div>Geração Explicação LLM: {llmTime !== undefined ? `${Number(llmTime).toFixed(1)} s` : "n/d"}</div>
+    </div>
+  );
+}
+
+function ExplanationPanel({ data, error, loading, onGenerate, disabled, promptStrategy, onPromptStrategyChange }) {
+  function formatProcessedAt(value) {
+    if (!value) return "";
+    const parsed = new Date(value);
+    if (Number.isNaN(parsed.getTime())) return value;
+    return parsed.toLocaleString("pt-BR");
+  }
+
+  function formatDuration(value) {
+    if (value === null || value === undefined || Number.isNaN(value)) return "";
+    return `${Number(value).toFixed(1)} s`;
+  }
+
   return (
     <div style={explanationPanelStyle}>
       <div style={{ display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap" }}>
         <strong>Explicação com LLM</strong>
+        <label style={{ display: "flex", gap: 8, alignItems: "center" }}>
+          <span>Estratégia</span>
+          <select value={promptStrategy} onChange={(e) => onPromptStrategyChange(e.target.value)} disabled={loading}>
+            <option value="few_shot">Few-shot</option>
+            <option value="zero_shot">Zero-shot</option>
+          </select>
+        </label>
         <button type="button" onClick={onGenerate} disabled={disabled || loading}>
           {loading ? "Gerando explicação..." : "Gerar explicação"}
         </button>
@@ -314,6 +375,15 @@ function ExplanationPanel({ data, error, loading, onGenerate, disabled }) {
 
       {data ? (
         <>
+          <div>
+            <strong>Processado em:</strong> {formatProcessedAt(data.processed_at_iso)}
+          </div>
+          <div>
+            <strong>Estratégia prompt:</strong> {data.prompt_strategy}
+          </div>
+          <div>
+            <strong>Janela analisada:</strong> {data.window_start_s.toFixed(2)} s - {data.window_end_s.toFixed(2)} s
+          </div>
           <div>
             <strong>Interpretação Vibracional:</strong> {data.interpretacao_vibracional}
           </div>
@@ -334,6 +404,49 @@ function ExplanationPanel({ data, error, loading, onGenerate, disabled }) {
   );
 }
 
+function formatMetricValue(value, digits = 1, suffix = "") {
+  if (value === null || value === undefined || Number.isNaN(value)) {
+    return "n/d";
+  }
+  return `${Number(value).toFixed(digits)}${suffix}`;
+}
+
+function SystemStatusPanel({ data, error }) {
+  return (
+    <section style={{ ...panelStyle, display: "grid", gap: 16 }}>
+      <div style={{ display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap" }}>
+        <h2 style={{ margin: 0, fontSize: 20 }}>Status da placa</h2>
+        {error ? <span style={{ color: "#c92a2a" }}>{error}</span> : null}
+      </div>
+
+      <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
+        <div style={telemetryCardStyle}>
+          <strong>CPU</strong>
+          <span>{formatMetricValue(data?.cpu_percent, 1, "%")}</span>
+          <small>{data ? `${data.cpu_busy_cores}/${data.cpu_physical_cores || 0} núcleos físicos com atividade` : "n/d"}</small>
+        </div>
+        <div style={telemetryCardStyle}>
+          <strong>Núcleos</strong>
+          <span>{data ? `${data.cpu_physical_cores || "n/d"} físicos` : "n/d"}</span>
+          <small>{data ? `limiar de atividade: ${data.cpu_busy_threshold_percent.toFixed(0)}%` : "n/d"}</small>
+        </div>
+        <div style={telemetryCardStyle}>
+          <strong>Memória</strong>
+          <span>{formatMetricValue(data?.memory_percent, 1, "%")}</span>
+          <small>
+            {formatMetricValue(data?.memory_used_mb, 0, " MB")} / {formatMetricValue(data?.memory_total_mb, 0, " MB")}
+          </small>
+        </div>
+        <div style={telemetryCardStyle}>
+          <strong>Temperatura</strong>
+          <span>{formatMetricValue(data?.temperature_c, 1, " °C")}</span>
+          <small>{data?.temperature_source || "fonte indisponível"}</small>
+        </div>
+      </div>
+    </section>
+  );
+}
+
 function formatSampleLabel(sample) {
   const parts = [sample.dataset_operacao, sample.condicao_operacao];
   if (sample.classe_nome) {
@@ -344,6 +457,8 @@ function formatSampleLabel(sample) {
 
 export default function App() {
   const [samples, setSamples] = useState([]);
+  const [systemStatus, setSystemStatus] = useState(null);
+  const [systemStatusError, setSystemStatusError] = useState("");
   const [selectedSample, setSelectedSample] = useState("");
   const [sampleMeta, setSampleMeta] = useState(null);
   const [axis, setAxis] = useState("x");
@@ -358,32 +473,55 @@ export default function App() {
   const [predictionError, setPredictionError] = useState("");
   const [shapResult, setShapResult] = useState(null);
   const [shapError, setShapError] = useState("");
+  const [promptStrategy, setPromptStrategy] = useState("few_shot");
   const [explanationResult, setExplanationResult] = useState(null);
   const [explanationError, setExplanationError] = useState("");
   const [explanationLoading, setExplanationLoading] = useState(false);
+  const [explanationElapsedSeconds, setExplanationElapsedSeconds] = useState(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  function applyFrequencyPreset(preset) {
-    if (!sampleMeta) return;
+  useEffect(() => {
+    let cancelled = false;
 
-    if (preset === "full") {
-      setFmin(0);
-      setFmax(5000);
-      return;
+    async function loadSystemStatus() {
+      try {
+        const data = await fetchSystemStatus();
+        if (!cancelled) {
+          setSystemStatus(data);
+          setSystemStatusError("");
+        }
+      } catch (err) {
+        if (!cancelled) {
+          setSystemStatusError(String(err));
+        }
+      }
     }
 
-    if (preset === "fm1") {
-      setFmin(Math.max(0, Math.round(sampleMeta.fm1 - 80)));
-      setFmax(Math.round(sampleMeta.fm1 + 80));
-      return;
-    }
+    loadSystemStatus();
+    const intervalId = window.setInterval(loadSystemStatus, 5000);
 
-    if (preset === "fm2") {
-      setFmin(Math.max(0, Math.round(sampleMeta.fm2 - 20)));
-      setFmax(Math.round(sampleMeta.fm2 + 20));
-    }
-  }
+    return () => {
+      cancelled = true;
+      window.clearInterval(intervalId);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!explanationLoading) return undefined;
+
+    const startedAt = Date.now();
+    setExplanationElapsedSeconds(0);
+
+    const intervalId = window.setInterval(() => {
+      const elapsed = Math.floor((Date.now() - startedAt) / 1000);
+      setExplanationElapsedSeconds(elapsed);
+    }, 1000);
+
+    return () => {
+      window.clearInterval(intervalId);
+    };
+  }, [explanationLoading]);
 
   useEffect(() => {
     fetchSamples()
@@ -408,6 +546,7 @@ export default function App() {
     setExplanationResult(null);
     setExplanationError("");
     setExplanationLoading(false);
+    setExplanationElapsedSeconds(0);
     setError("");
     fetchSampleMeta(selectedSample)
       .then((meta) => {
@@ -477,12 +616,14 @@ export default function App() {
     if (!selectedSample) return;
 
     setExplanationLoading(true);
+    setExplanationElapsedSeconds(0);
     setExplanationError("");
     try {
       const data = await fetchExplanation({
         sample_id: selectedSample,
         window_index: Number(windowIndex),
-        top_k: 5
+        top_k: 5,
+        prompt_strategy: promptStrategy
       });
       setExplanationResult(data);
     } catch (err) {
@@ -496,11 +637,10 @@ export default function App() {
   return (
     <main style={{ padding: 24, display: "grid", gap: 20 }}>
       <section style={panelStyle}>
-        <h1 style={{ marginTop: 0 }}>Rock Pi FFT Viewer</h1>
-        <p style={{ marginBottom: 0 }}>
-          MVP para selecionar uma amostra contínua de teste, escolher uma janela de 1 s e visualizar a FFT.
-        </p>
+        <h1 style={{ marginTop: 0 }}>Manutenção Preditiva em Redutores Planetários por Análise de Vibração: Classificação Explicável de Falhas Integrando ML, XAI e LLM</h1>
       </section>
+
+      <SystemStatusPanel data={systemStatus} error={systemStatusError} />
 
       <section style={{ ...panelStyle, display: "grid", gap: 16 }}>
         <div style={{ display: "flex", gap: 16, flexWrap: "wrap" }}>
@@ -563,21 +703,6 @@ export default function App() {
           )}
         </div>
 
-        {sampleMeta && (
-          <div style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center" }}>
-            <strong>Presets de faixa:</strong>
-            <button type="button" style={presetButtonStyle} onClick={() => applyFrequencyPreset("full")}>
-              0-5000 Hz
-            </button>
-            <button type="button" style={presetButtonStyle} onClick={() => applyFrequencyPreset("fm1")}>
-              Fm1 ± 80 Hz
-            </button>
-            <button type="button" style={presetButtonStyle} onClick={() => applyFrequencyPreset("fm2")}>
-              Fm2 ± 20 Hz
-            </button>
-          </div>
-        )}
-
         {error ? <pre style={{ color: "#c92a2a", margin: 0 }}>{error}</pre> : null}
       </section>
 
@@ -588,25 +713,10 @@ export default function App() {
               <strong>{sampleMeta ? formatSampleLabel(sampleMeta) : fftResult.dataset_operacao}</strong> | janela{" "}
               {signalResult.window_index} | {signalResult.window_start_s.toFixed(2)} s - {signalResult.window_end_s.toFixed(2)} s
             </div>
-            <div style={{ marginBottom: 16 }}>
+            <RawSignalChart data={signalResult} />
+            <div style={{ marginTop: 16 }}>
               <FeaturePanel data={featureResult} />
             </div>
-            <div style={{ marginBottom: 16 }}>
-              <PredictionPanel data={predictionResult} error={predictionError} />
-            </div>
-            <div style={{ marginBottom: 16 }}>
-              <ShapPanel data={shapResult} error={shapError} />
-            </div>
-            <div style={{ marginBottom: 16 }}>
-              <ExplanationPanel
-                data={explanationResult}
-                error={explanationError}
-                loading={explanationLoading}
-                onGenerate={handleGenerateExplanation}
-                disabled={!predictionResult}
-              />
-            </div>
-            <RawSignalChart data={signalResult} />
           </>
         ) : (
           <p style={{ margin: 0 }}>Selecione uma amostra e calcule o sinal bruto e a FFT.</p>
@@ -625,6 +735,55 @@ export default function App() {
         ) : (
           <p style={{ margin: 0 }}>Selecione uma amostra e calcule o sinal bruto e a FFT.</p>
         )}
+      </section>
+
+      <section style={panelStyle}>
+        {predictionResult || predictionError ? (
+          <PredictionPanel data={predictionResult} error={predictionError} />
+        ) : (
+          <p style={{ margin: 0 }}>Calcule a janela para visualizar a classe predita.</p>
+        )}
+      </section>
+
+      <section style={panelStyle}>
+        {shapResult || shapError ? (
+          <ShapPanel data={shapResult} error={shapError} />
+        ) : (
+          <p style={{ margin: 0 }}>Calcule a janela para visualizar o SHAP local.</p>
+        )}
+      </section>
+
+      <section style={panelStyle}>
+        <TimingPanel
+          predictionData={predictionResult}
+          shapData={shapResult}
+          explanationData={explanationResult}
+          explanationLoading={explanationLoading}
+          explanationElapsedSeconds={explanationElapsedSeconds}
+        />
+        {!predictionResult && !shapResult ? (
+          <p style={{ margin: 0 }}>Calcule a janela para visualizar os tempos de extração, inferência e SHAP.</p>
+        ) : null}
+      </section>
+
+      <section style={panelStyle}>
+        {explanationLoading || explanationResult?.llm_processing_seconds !== undefined ? (
+          <div style={{ marginBottom: 12 }}>
+            <strong>Tempo processamento da LLM:</strong>{" "}
+            {explanationLoading
+              ? `${explanationElapsedSeconds} s`
+              : `${Number(explanationResult.llm_processing_seconds).toFixed(1)} s`}
+          </div>
+        ) : null}
+        <ExplanationPanel
+          data={explanationResult}
+          error={explanationError}
+          loading={explanationLoading}
+          onGenerate={handleGenerateExplanation}
+          disabled={!predictionResult}
+          promptStrategy={promptStrategy}
+          onPromptStrategyChange={setPromptStrategy}
+        />
       </section>
     </main>
   );

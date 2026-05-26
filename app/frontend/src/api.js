@@ -26,6 +26,10 @@ export function fetchSamples() {
   return request("/api/samples");
 }
 
+export function fetchSystemStatus() {
+  return request("/api/system-status");
+}
+
 export function fetchSampleMeta(sampleId) {
   return request(`/api/samples/${sampleId}/meta`);
 }

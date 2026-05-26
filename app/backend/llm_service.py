@@ -22,62 +22,64 @@ class LocalLlamaExplanationService:
         predicted_class_name: str,
         predicted_probability: float,
         top_contributions: list[dict[str, Any]],
+        prompt_strategy: str = "few_shot",
         concise: bool = False,
     ) -> tuple[str, str, list[dict[str, str]]]:
-        system_prompt = """You are a specialist in vibration analysis for planetary gearboxes.
+        del condicao_operacao
 
-Rules:
-- Use only the provided evidence.
-- The operating condition is context only and must not be treated as fault evidence.
-- Do not invent frequencies, causes, severity, extreme conditions, mechanical stress, tension, or symptoms.
-- Do not describe a variable as high, low, normal, abnormal, extreme, critical, within range, or outside range without an explicit reference.
+        system_prompt = """<ROLE>
+You are a specialist in vibration analysis for planetary gearboxes.
+</ROLE>
+
+<STRICT_RULES>
+- Use only the provided evidence list.
+- The evidence list contains exactly the provided items and no other hidden evidence.
+- Do not invent frequencies, causes, severity, numeric ranges, thresholds, extreme conditions, mechanical stress, tension, or symptoms.
+- If no explicit reference range is provided, never say normal, abnormal, elevated, reduced, within range, or outside range.
+- Do not create numeric limits such as "0.10 to 0.20" or similar.
+- Mention only concepts supported by variable families present in the evidence list.
+- Without RMS, do not mention global vibration level.
+- Without kurtosis, do not mention impulsiveness.
+- Without peak value, do not mention peak amplitude in the time signal.
+- Without crest factor, do not mention the relationship between peak and RMS.
+- Without harmonic energy features, do not mention concentration of energy in harmonic bands.
+- Without maximum harmonic amplitude features, do not mention maximum spectral amplitude in a harmonic band.
 - Do not mention imbalance, misalignment, looseness, wear progression, mechanical stress, or other specific mechanisms unless they are explicitly supported by the evidence.
+- Do not use generic expressions such as "high-frequency components", "system response", or "system behavior" unless they are directly supported by the evidence block.
 - If the evidence is limited, use cautious language such as "compatible with" or "suggests".
+- Prefer citing the highest-ranked evidence items first.
+- When 3 or more evidence items are provided, mention at least 3 of them in interpretacao_vibracional.
+- Treat every percentage in the evidence list as an approximate share of absolute local explanatory impact, not as probability share.
 - Do not mention SHAP, model, AI, or prompt.
 - Do not provide recommended actions.
 - Write the final answer only in Brazilian Portuguese.
-- Return only valid JSON in this format:
+</STRICT_RULES>
+
+<OUTPUT_FORMAT>
+Return only valid JSON in this format:
 {
   "interpretacao_vibracional": "...",
   "interpretacao_mecanica": "..."
-}"""
+}
+</OUTPUT_FORMAT>"""
 
-        evidence_lines = []
-        for idx, item in enumerate(top_contributions, start=1):
-            evidence_lines.append(f"{idx}. {self._describe_contribution(item)}")
+        fixed_user_prefix = self._fixed_user_prefix()
+        evidence_lines = [f"{idx}. {self._describe_contribution(item)}" for idx, item in enumerate(top_contributions, start=1)]
 
-        user_prompt = f"""/no_think
-Equipment: two-stage planetary gearbox.
-Monitored component: second-stage sun gear.
-Operating condition: {condicao_operacao}.
-Predicted class: {predicted_class_name}.
-Predicted class probability: {predicted_probability:.4f}.
+        user_prompt = f"""{fixed_user_prefix}
 
-Variable legend:
-- RMS: global vibration level of the segment on the analyzed axis.
-- kurtosis: impulsiveness of the time signal on the analyzed axis.
-- peak value: highest absolute amplitude observed in the segment on the analyzed axis.
-- crest factor: ratio between peak value and RMS on the analyzed axis.
-- energy around an Fm1 harmonic: spectral energy inside a +/-10 Hz band around a first-stage gear mesh harmonic.
-- energy around an Fm2 harmonic: spectral energy inside a +/-10 Hz band around a second-stage gear mesh harmonic.
-- maximum amplitude around an Fm1 harmonic: highest spectral amplitude inside a +/-10 Hz band around an Fm1 harmonic.
-- maximum amplitude around an Fm2 harmonic: highest spectral amplitude inside a +/-10 Hz band around an Fm2 harmonic.
-- "contributed positively to the predicted class": this variable pushed the model toward the predicted class.
-- "contributed negatively to the predicted class": this variable pushed the model away from the predicted class.
-
-Observed evidence for this window:
+<CURRENT_WINDOW>
+<PREDICTED_CLASS>{predicted_class_name}</PREDICTED_CLASS>
+<PREDICTED_CLASS_PROBABILITY>{predicted_probability:.4f}</PREDICTED_CLASS_PROBABILITY>
+<OBSERVED_EVIDENCE>
 {chr(10).join(evidence_lines)}
-
-Explain what was observed in the signal and what this suggests mechanically.
-Do not treat the operating condition as evidence.
-Do not extrapolate beyond the provided variables.
-In interpretacao_vibracional, describe only the observed variables and associated axes.
-In interpretacao_mecanica, state only whether the evidence is compatible with the predicted class, using cautious wording when needed.
-Do not compare with normal ranges, reference limits, or expected values.
-{"Be even more brief and direct." if concise else "Generate the final explanation."}"""
+</OBSERVED_EVIDENCE>
+<FINAL_INSTRUCTION>{"Be even more brief and direct." if concise else "Generate the final explanation."}</FINAL_INSTRUCTION>
+</CURRENT_WINDOW>"""
 
         messages = [{"role": "system", "content": system_prompt}]
-        messages.extend(self._few_shot_examples())
+        if prompt_strategy == "few_shot":
+            messages.extend(self._few_shot_examples())
         messages.append({"role": "user", "content": user_prompt})
         return system_prompt, user_prompt, messages
 
@@ -87,12 +89,14 @@ Do not compare with normal ranges, reference limits, or expected values.
         predicted_class_name: str,
         predicted_probability: float,
         top_contributions: list[dict[str, Any]],
+        prompt_strategy: str = "few_shot",
     ) -> dict[str, Any]:
         system_prompt, user_prompt, messages = self.build_messages(
             condicao_operacao=condicao_operacao,
             predicted_class_name=predicted_class_name,
             predicted_probability=predicted_probability,
             top_contributions=top_contributions,
+            prompt_strategy=prompt_strategy,
         )
 
         content = self._chat_completion(messages, self.max_tokens)
@@ -105,6 +109,7 @@ Do not compare with normal ranges, reference limits, or expected values.
                 predicted_class_name=predicted_class_name,
                 predicted_probability=predicted_probability,
                 top_contributions=top_contributions,
+                prompt_strategy=prompt_strategy,
                 concise=True,
             )
             retry_max_tokens = min(max(self.max_tokens + 80, int(self.max_tokens * 1.5)), 400)
@@ -150,13 +155,9 @@ Do not compare with normal ranges, reference limits, or expected values.
         except error.URLError as exc:
             raise RuntimeError(f"Falha ao conectar ao llama-server em {self.chat_completions_url}: {exc}") from exc
         except TimeoutError as exc:
-            raise RuntimeError(
-                f"Timeout ao aguardar resposta do llama-server apos {self.timeout_seconds:.0f} s."
-            ) from exc
+            raise RuntimeError(f"Timeout ao aguardar resposta do llama-server apos {self.timeout_seconds:.0f} s.") from exc
         except socket.timeout as exc:
-            raise RuntimeError(
-                f"Timeout ao aguardar resposta do llama-server apos {self.timeout_seconds:.0f} s."
-            ) from exc
+            raise RuntimeError(f"Timeout ao aguardar resposta do llama-server apos {self.timeout_seconds:.0f} s.") from exc
         except Exception as exc:
             raise RuntimeError(f"Falha inesperada ao consultar o llama-server: {exc}") from exc
 
@@ -167,88 +168,85 @@ Do not compare with normal ranges, reference limits, or expected values.
             raise RuntimeError(f"Resposta invalida do llama-server: {raw}") from exc
 
     def _few_shot_examples(self) -> list[dict[str, str]]:
-        example_1_user = """/no_think
-Equipment: two-stage planetary gearbox.
-Monitored component: second-stage sun gear.
-Operating condition: 1500 rpm / 10 Nm.
-Predicted class: Desgaste Superficial.
-Predicted class probability: 0.9810.
+        fixed_user_prefix = self._fixed_user_prefix()
 
-Variable legend:
-- RMS: global vibration level of the segment on the analyzed axis.
-- kurtosis: impulsiveness of the time signal on the analyzed axis.
-- peak value: highest absolute amplitude observed in the segment on the analyzed axis.
-- crest factor: ratio between peak value and RMS on the analyzed axis.
-- energy around an Fm1 harmonic: spectral energy inside a +/-10 Hz band around a first-stage gear mesh harmonic.
-- energy around an Fm2 harmonic: spectral energy inside a +/-10 Hz band around a second-stage gear mesh harmonic.
-- maximum amplitude around an Fm1 harmonic: highest spectral amplitude inside a +/-10 Hz band around an Fm1 harmonic.
-- maximum amplitude around an Fm2 harmonic: highest spectral amplitude inside a +/-10 Hz band around an Fm2 harmonic.
-- "contributed positively to the predicted class": this variable pushed the model toward the predicted class.
-- "contributed negatively to the predicted class": this variable pushed the model away from the predicted class.
+        example_user = f"""{fixed_user_prefix}
 
-Observed evidence for this window:
-1. RMS on axis Y = 0.207204; contributed positively to the predicted class; approximate local importance = 31.0%.
-2. peak value on axis Z = 1.153589; contributed positively to the predicted class; approximate local importance = 27.5%.
-3. peak value on axis Y = 0.969533; contributed positively to the predicted class; approximate local importance = 22.4%.
-4. kurtosis on axis Y = 3.127697; contributed positively to the predicted class; approximate local importance = 12.8%.
+<CURRENT_WINDOW>
+<PREDICTED_CLASS>Dente Trincado</PREDICTED_CLASS>
+<PREDICTED_CLASS_PROBABILITY>0.9925</PREDICTED_CLASS_PROBABILITY>
+<OBSERVED_EVIDENCE>
+1. RMS on axis Y = 0.214310; contributed positively to the predicted class; approximate local importance = 28.7%.
+2. energy around harmonic 1 of Fm2 on axis X = 0.004812; contributed positively to the predicted class; approximate local importance = 24.9%.
+3. maximum amplitude around harmonic 2 of Fm2 on axis Z = 0.021334; contributed positively to the predicted class; approximate local importance = 19.8%.
+4. crest factor on axis Z = 5.184220; contributed positively to the predicted class; approximate local importance = 11.5%.
+</OBSERVED_EVIDENCE>
+<FINAL_INSTRUCTION>Generate the final explanation.</FINAL_INSTRUCTION>
+</CURRENT_WINDOW>"""
 
-Explain what was observed in the signal and what this suggests mechanically.
-Do not treat the operating condition as evidence.
-Do not extrapolate beyond the provided variables.
-In interpretacao_vibracional, describe only the observed variables and associated axes.
-In interpretacao_mecanica, state only whether the evidence is compatible with the predicted class, using cautious wording when needed.
-Do not compare with normal ranges, reference limits, or expected values.
-Generate the final explanation."""
-
-        example_1_assistant = """{
-  "interpretacao_vibracional": "A janela apresenta contribuicoes relevantes de RMS, peak value e kurtosis, principalmente nos eixos Y e Z. Essas variaveis indicam alteracao no nivel global de vibracao, na amplitude de pico e na impulsividade do sinal nessa janela.",
-  "interpretacao_mecanica": "O conjunto de evidencias e compativel com a classe predita de Desgaste Superficial. A interpretacao deve ser feita com cautela, pois as evidencias fornecidas descrevem indicadores do sinal e nao um mecanismo mecanico especifico."
-}"""
-
-        example_2_user = """/no_think
-Equipment: two-stage planetary gearbox.
-Monitored component: second-stage sun gear.
-Operating condition: 2700 rpm / 25 Nm.
-Predicted class: Dente Trincado.
-Predicted class probability: 0.9925.
-
-Variable legend:
-- RMS: global vibration level of the segment on the analyzed axis.
-- kurtosis: impulsiveness of the time signal on the analyzed axis.
-- peak value: highest absolute amplitude observed in the segment on the analyzed axis.
-- crest factor: ratio between peak value and RMS on the analyzed axis.
-- energy around an Fm1 harmonic: spectral energy inside a +/-10 Hz band around a first-stage gear mesh harmonic.
-- energy around an Fm2 harmonic: spectral energy inside a +/-10 Hz band around a second-stage gear mesh harmonic.
-- maximum amplitude around an Fm1 harmonic: highest spectral amplitude inside a +/-10 Hz band around an Fm1 harmonic.
-- maximum amplitude around an Fm2 harmonic: highest spectral amplitude inside a +/-10 Hz band around an Fm2 harmonic.
-- "contributed positively to the predicted class": this variable pushed the model toward the predicted class.
-- "contributed negatively to the predicted class": this variable pushed the model away from the predicted class.
-
-Observed evidence for this window:
-1. energy around harmonic 1 of Fm2 on axis X = 0.004812; contributed positively to the predicted class; approximate local importance = 29.4%.
-2. maximum amplitude around harmonic 2 of Fm2 on axis Z = 0.021334; contributed positively to the predicted class; approximate local importance = 24.7%.
-3. energy around harmonic 3 of Fm1 on axis Y = 0.002105; contributed positively to the predicted class; approximate local importance = 18.2%.
-4. crest factor on axis Z = 5.184220; contributed positively to the predicted class; approximate local importance = 14.6%.
-
-Explain what was observed in the signal and what this suggests mechanically.
-Do not treat the operating condition as evidence.
-Do not extrapolate beyond the provided variables.
-In interpretacao_vibracional, describe only the observed variables and associated axes.
-In interpretacao_mecanica, state only whether the evidence is compatible with the predicted class, using cautious wording when needed.
-Do not compare with normal ranges, reference limits, or expected values.
-Generate the final explanation."""
-
-        example_2_assistant = """{
-  "interpretacao_vibracional": "A janela mostra contribuicoes de energia e amplitude maxima em harmonicas de Fm1 e Fm2, alem de crest factor no eixo Z. Essas evidencias apontam para participacao de componentes harmonicas do engrenamento e para alteracoes na resposta temporal e espectral do segmento.",
-  "interpretacao_mecanica": "O conjunto de evidencias e compativel com a classe predita de Dente Trincado. Ainda assim, a interpretacao mecanica deve ser vista com cautela, porque as evidencias fornecidas representam contribuicoes de variaveis e nao uma confirmacao fisica direta do mecanismo de falha."
+        example_assistant = """{
+  "interpretacao_vibracional": "A janela mostra RMS no eixo Y = 0.214310, com importância local aproximada de 28.7%, energia em torno da harmônica 1 de Fm2 no eixo X = 0.004812, com 24.9%, amplitude máxima em torno da harmônica 2 de Fm2 no eixo Z = 0.021334, com 19.8%, e crest factor no eixo Z = 5.184220, com 11.5%. Essas evidências descrevem contribuições associadas ao nível global de vibração, à concentração de energia em bandas harmônicas, à amplitude máxima em banda harmônica e à relação entre pico e RMS nesta janela.",
+  "interpretacao_mecanica": "O conjunto de evidências é compatível com a classe predita de Dente Trincado. Essa interpretação deve ser vista com cautela, porque as evidências fornecidas descrevem variáveis do sinal e bandas harmônicas relevantes, mas não constituem confirmação direta de um mecanismo específico de falha."
 }"""
 
         return [
-            {"role": "user", "content": example_1_user},
-            {"role": "assistant", "content": example_1_assistant},
-            {"role": "user", "content": example_2_user},
-            {"role": "assistant", "content": example_2_assistant},
+            {"role": "user", "content": example_user},
+            {"role": "assistant", "content": example_assistant},
         ]
+
+    def _fixed_user_prefix(self) -> str:
+        return """<FIXED_CONTEXT>
+- Equipment: two-stage planetary gearbox.
+- Monitored component: second-stage sun gear.
+</FIXED_CONTEXT>
+
+<VARIABLE_LEGEND>
+<TIME_DOMAIN_VARIABLES>
+- RMS: global vibration level of the segment on the analyzed axis.
+- kurtosis: impulsiveness of the time signal on the analyzed axis.
+- peak value: highest absolute amplitude observed in the segment on the analyzed axis.
+- crest factor: ratio between peak value and RMS on the analyzed axis.
+</TIME_DOMAIN_VARIABLES>
+<FREQUENCY_DOMAIN_HARMONIC_BAND_VARIABLES>
+- energy around an Fm1 harmonic: spectral energy inside a +/-10 Hz band around a first-stage gear mesh harmonic.
+- energy around an Fm2 harmonic: spectral energy inside a +/-10 Hz band around a second-stage gear mesh harmonic.
+- maximum amplitude around an Fm1 harmonic: highest spectral amplitude inside a +/-10 Hz band around an Fm1 harmonic.
+- maximum amplitude around an Fm2 harmonic: highest spectral amplitude inside a +/-10 Hz band around an Fm2 harmonic.
+</FREQUENCY_DOMAIN_HARMONIC_BAND_VARIABLES>
+<ATTRIBUTION_TERMS>
+- "contributed positively to the predicted class": this variable pushed the model toward the predicted class.
+- "contributed negatively to the predicted class": this variable pushed the model away from the predicted class.
+- approximate local importance: approximate share of absolute local explanatory impact attributed to that variable in the current window.
+</ATTRIBUTION_TERMS>
+</VARIABLE_LEGEND>
+
+<INTERPRETATION_MAPPING_RULES>
+- RMS allows mentioning global vibration level.
+- kurtosis allows mentioning impulsiveness of the time signal.
+- peak value allows mentioning peak amplitude in the time signal.
+- crest factor allows mentioning the relationship between peak value and RMS.
+- energy around an Fm1 or Fm2 harmonic allows mentioning concentration of energy inside harmonic bands.
+- maximum amplitude around an Fm1 or Fm2 harmonic allows mentioning the highest spectral amplitude inside a harmonic band.
+- Use only concepts associated with variable families present in the evidence block.
+- If a variable family is absent, do not mention the concept associated with it.
+- Example: without kurtosis, do not mention impulsiveness.
+- Example: without peak value, do not mention peak amplitude in the time signal.
+- Example: without harmonic energy, do not mention concentration of energy inside harmonic bands.
+- Example: without maximum harmonic amplitude, do not mention the highest spectral amplitude inside a harmonic band.
+</INTERPRETATION_MAPPING_RULES>
+
+<TASK>
+- interpretacao_vibracional: describe only the observed variables and their axes or harmonics.
+- When useful, explicitly cite the variable value and the approximate local importance percentage.
+- Prefer literal descriptions of the reported variables instead of generic summaries.
+- Distinguish clearly between time-domain variables and frequency-domain harmonic-band variables when describing the evidence.
+- interpretacao_mecanica: state only whether the evidence is compatible with the predicted class, using cautious wording.
+- If the predicted class is Normal, state that the main evidence in this window did not indicate predominance of a pattern compatible with the modeled fault classes.
+- If the predicted class is not Normal, do not present the fault class as confirmed; use language compatible with or suggestive of the predicted class.
+- Do not compare with normal ranges, reference limits, or expected values.
+- Do not mention operating condition, rotation, torque, or reduction ratio unless they appear explicitly in the variable block.
+- If a variable family is absent from the evidence, avoid introducing the associated concept.
+</TASK>"""
 
     def _describe_contribution(self, item: dict[str, Any]) -> str:
         feature = str(item["feature"])

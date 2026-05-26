@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
+from time import perf_counter
 
 import joblib
 import numpy as np
@@ -167,10 +168,14 @@ class SimplifiedTabularModelService:
         if not self.available:
             raise RuntimeError(self.load_error or "Model not available.")
 
+        feature_started_at = perf_counter()
         features, window_start_s, window_end_s = self.extract_features_from_sample(sample_npz, window_index)
+        feature_extraction_seconds = perf_counter() - feature_started_at
         X_input = self._build_input_frame(features)
 
+        inference_started_at = perf_counter()
         probabilities = self.model.predict_proba(X_input)[0]
+        model_inference_seconds = perf_counter() - inference_started_at
         classes = [int(cls) for cls in self.model.classes_]
         best_position = int(np.argmax(probabilities))
         predicted_class = classes[best_position]
@@ -185,21 +190,29 @@ class SimplifiedTabularModelService:
             "predicted_probability": float(probabilities[best_position]),
             "class_probabilities": probability_map,
             "feature_vector": {name: float(features[name]) for name in self.feature_columns},
+            "feature_extraction_seconds": float(feature_extraction_seconds),
+            "model_inference_seconds": float(model_inference_seconds),
         }
 
     def explain_window(self, sample_npz, window_index: int, top_k: int = 5) -> dict:
         if not self.available:
             raise RuntimeError(self.load_error or "Model not available.")
 
+        feature_started_at = perf_counter()
         features, window_start_s, window_end_s = self.extract_features_from_sample(sample_npz, window_index)
+        feature_extraction_seconds = perf_counter() - feature_started_at
         X_input = self._build_input_frame(features)
 
+        inference_started_at = perf_counter()
         probabilities = self.model.predict_proba(X_input)[0]
+        model_inference_seconds = perf_counter() - inference_started_at
         classes = [int(cls) for cls in self.model.classes_]
         best_position = int(np.argmax(probabilities))
         predicted_class = classes[best_position]
 
+        shap_started_at = perf_counter()
         contrib_matrix = self._compute_contributions(X_input, len(classes))
+        shap_inference_seconds = perf_counter() - shap_started_at
         class_index = classes.index(predicted_class)
         class_contrib = contrib_matrix[class_index]
 
@@ -231,6 +244,9 @@ class SimplifiedTabularModelService:
             "predicted_probability": float(probabilities[best_position]),
             "expected_value": expected_value,
             "top_contributions": top_contributions,
+            "feature_extraction_seconds": float(feature_extraction_seconds),
+            "model_inference_seconds": float(model_inference_seconds),
+            "shap_inference_seconds": float(shap_inference_seconds),
         }
 
     def _compute_contributions(self, X_input: pd.DataFrame, n_classes: int) -> np.ndarray:

@@ -28,6 +28,20 @@ class SampleMetadata(SampleSummary):
     fm2: float
 
 
+class SystemStatusResponse(BaseModel):
+    cpu_percent: float
+    cpu_logical_cores: int
+    cpu_physical_cores: int
+    cpu_busy_cores: int
+    cpu_busy_threshold_percent: float
+    cpu_per_core_percent: list[float]
+    memory_percent: float
+    memory_used_mb: float
+    memory_total_mb: float
+    temperature_c: float | None = None
+    temperature_source: str | None = None
+
+
 class FftRequest(BaseModel):
     sample_id: str
     axis: Literal["x", "y", "z"] = "x"
@@ -97,6 +111,8 @@ class PredictResponse(BaseModel):
     predicted_probability: float
     class_probabilities: dict[str, float]
     feature_vector: dict[str, float]
+    feature_extraction_seconds: float
+    model_inference_seconds: float
 
 
 class ShapRequest(BaseModel):
@@ -128,12 +144,16 @@ class ShapResponse(BaseModel):
     predicted_probability: float
     expected_value: float
     top_contributions: list[ShapContribution]
+    feature_extraction_seconds: float
+    model_inference_seconds: float
+    shap_inference_seconds: float
 
 
 class ExplainRequest(BaseModel):
     sample_id: str
     window_index: int = Field(ge=0)
     top_k: int = Field(default=5, ge=1, le=20)
+    prompt_strategy: Literal["few_shot", "zero_shot"] = "few_shot"
 
 
 class ExplainResponse(BaseModel):
@@ -145,6 +165,9 @@ class ExplainResponse(BaseModel):
     window_index: int
     window_start_s: float
     window_end_s: float
+    processed_at_iso: str
+    llm_processing_seconds: float
+    prompt_strategy: Literal["few_shot", "zero_shot"]
     predicted_class: int
     predicted_class_name: str
     predicted_probability: float

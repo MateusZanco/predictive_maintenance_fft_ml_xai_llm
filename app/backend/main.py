@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 import os
+from datetime import datetime
 from pathlib import Path
+from time import perf_counter
 
 import numpy as np
 from fastapi import FastAPI, HTTPException
@@ -38,7 +40,9 @@ from .schemas import (
     ShapResponse,
     SignalRequest,
     SignalResponse,
+    SystemStatusResponse,
 )
+from .system_metrics import read_system_metrics
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
@@ -77,6 +81,11 @@ def health() -> dict[str, str]:
         "model_available": "true" if model_service.available else "false",
         "model_type": model_service.model_type or "",
     }
+
+
+@app.get("/api/system-status", response_model=SystemStatusResponse)
+def system_status() -> SystemStatusResponse:
+    return SystemStatusResponse(**read_system_metrics())
 
 
 @app.get("/api/samples", response_model=list[SampleSummary])
@@ -242,6 +251,8 @@ def predict_window(request: PredictRequest) -> PredictResponse:
         predicted_probability=prediction["predicted_probability"],
         class_probabilities=prediction["class_probabilities"],
         feature_vector=prediction["feature_vector"],
+        feature_extraction_seconds=prediction["feature_extraction_seconds"],
+        model_inference_seconds=prediction["model_inference_seconds"],
     )
 
 
@@ -289,6 +300,9 @@ def explain_window_shap(request: ShapRequest) -> ShapResponse:
         predicted_probability=explanation["predicted_probability"],
         expected_value=explanation["expected_value"],
         top_contributions=explanation["top_contributions"],
+        feature_extraction_seconds=explanation["feature_extraction_seconds"],
+        model_inference_seconds=explanation["model_inference_seconds"],
+        shap_inference_seconds=explanation["shap_inference_seconds"],
     )
 
 
@@ -308,9 +322,12 @@ def explain_window_llm(request: ExplainRequest) -> ExplainResponse:
     except FileNotFoundError as exc:
         raise HTTPException(status_code=404, detail=f"Sample not found: {request.sample_id}") from exc
 
+    processed_at_iso = datetime.now().astimezone().isoformat()
+
     with sample_npz:
         try:
             shap_explanation = model_service.explain_window(sample_npz, request.window_index, top_k=request.top_k)
+            llm_started_at = perf_counter()
             llm_explanation = llm_service.generate_explanation(
                 condicao_operacao=str(
                     sample_npz["condicao_operacao"].item()
@@ -320,7 +337,9 @@ def explain_window_llm(request: ExplainRequest) -> ExplainResponse:
                 predicted_class_name=shap_explanation["predicted_class_name"],
                 predicted_probability=shap_explanation["predicted_probability"],
                 top_contributions=shap_explanation["top_contributions"],
+                prompt_strategy=request.prompt_strategy,
             )
+            llm_processing_seconds = perf_counter() - llm_started_at
         except (KeyError, IndexError, ValueError) as exc:
             raise HTTPException(status_code=400, detail=str(exc)) from exc
         except RuntimeError as exc:
@@ -346,6 +365,9 @@ def explain_window_llm(request: ExplainRequest) -> ExplainResponse:
         window_index=request.window_index,
         window_start_s=shap_explanation["window_start_s"],
         window_end_s=shap_explanation["window_end_s"],
+        processed_at_iso=processed_at_iso,
+        llm_processing_seconds=llm_processing_seconds,
+        prompt_strategy=request.prompt_strategy,
         predicted_class=shap_explanation["predicted_class"],
         predicted_class_name=shap_explanation["predicted_class_name"],
         predicted_probability=shap_explanation["predicted_probability"],

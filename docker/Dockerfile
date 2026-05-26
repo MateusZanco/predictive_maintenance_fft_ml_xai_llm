@@ -16,7 +16,7 @@ ENV LLM_MODEL=
 ENV LLM_TEMPERATURE=0.2
 ENV LLM_TOP_P=0.8
 ENV LLM_MAX_TOKENS=500
-ENV LLM_TIMEOUT_SECONDS=250
+ENV LLM_TIMEOUT_SECONDS=800
 
 RUN apt-get update \
     && apt-get install -y --no-install-recommends libgomp1 \
