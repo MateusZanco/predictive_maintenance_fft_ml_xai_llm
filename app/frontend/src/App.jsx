@@ -382,14 +382,25 @@ function ExplanationPanel({ data, error, loading, onGenerate, disabled, promptSt
             <strong>Estratégia prompt:</strong> {data.prompt_strategy}
           </div>
           <div>
+            <strong>Formato resposta:</strong> {data.response_format === "raw_text" ? "texto livre" : "json"}
+          </div>
+          <div>
             <strong>Janela analisada:</strong> {data.window_start_s.toFixed(2)} s - {data.window_end_s.toFixed(2)} s
           </div>
-          <div>
-            <strong>Interpretação Vibracional:</strong> {data.interpretacao_vibracional}
-          </div>
-          <div>
-            <strong>Interpretação Mecânica:</strong> {data.interpretacao_mecanica}
-          </div>
+          {data.response_format === "raw_text" ? (
+            <div>
+              <strong>Resposta livre do modelo:</strong> {data.unstructured_response || data.raw_response}
+            </div>
+          ) : (
+            <>
+              <div>
+                <strong>Interpretação Vibracional:</strong> {data.interpretacao_vibracional}
+              </div>
+              <div>
+                <strong>Interpretação Mecânica:</strong> {data.interpretacao_mecanica}
+              </div>
+            </>
+          )}
           <details>
             <summary>Auditoria do prompt</summary>
             <pre style={{ whiteSpace: "pre-wrap" }}>{data.system_prompt}</pre>

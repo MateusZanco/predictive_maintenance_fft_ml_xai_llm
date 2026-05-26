@@ -168,11 +168,13 @@ class ExplainResponse(BaseModel):
     processed_at_iso: str
     llm_processing_seconds: float
     prompt_strategy: Literal["few_shot", "zero_shot"]
+    response_format: Literal["json", "raw_text"] = "json"
     predicted_class: int
     predicted_class_name: str
     predicted_probability: float
     interpretacao_vibracional: str
     interpretacao_mecanica: str
+    unstructured_response: str | None = None
     system_prompt: str
     user_prompt: str
     raw_response: str
