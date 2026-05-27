@@ -82,6 +82,8 @@ const telemetryCardStyle = {
   minWidth: 180
 };
 
+const HARMONIC_BAND_HALF_WIDTH_HZ = 10;
+
 function buildHarmonicTraces(baseFrequency, maxFrequency, color, familyName) {
   const traces = [];
   for (let order = 2; order <= 5; order += 1) {
@@ -103,6 +105,29 @@ function buildHarmonicTraces(baseFrequency, maxFrequency, color, familyName) {
   return traces;
 }
 
+function buildFrequencyBandShapes(baseFrequency, maxFrequency, fillcolor) {
+  const shapes = [];
+  for (let order = 1; order <= 5; order += 1) {
+    const harmonicFrequency = baseFrequency * order;
+    if (harmonicFrequency > maxFrequency) {
+      break;
+    }
+    shapes.push({
+      type: "rect",
+      xref: "x",
+      yref: "paper",
+      x0: Math.max(0, harmonicFrequency - HARMONIC_BAND_HALF_WIDTH_HZ),
+      x1: harmonicFrequency + HARMONIC_BAND_HALF_WIDTH_HZ,
+      y0: 0,
+      y1: 1,
+      fillcolor,
+      line: { width: 0 },
+      layer: "below"
+    });
+  }
+  return shapes;
+}
+
 function FftChart({ data }) {
   const ref = useRef(null);
 
@@ -112,12 +137,16 @@ function FftChart({ data }) {
     const ymax = Math.max(...data.amp, 0);
     const maxFrequency = Math.max(...data.freq, 0);
     const harmonicTraces = [
-      ...buildHarmonicTraces(data.fm1, maxFrequency, "#e03131", "Harmonicas Fm1"),
-      ...buildHarmonicTraces(data.fm2, maxFrequency, "#1b5e20", "Harmonicas Fm2")
+      ...buildHarmonicTraces(data.fm1, maxFrequency, "#e03131", "Harmônicas Fm1"),
+      ...buildHarmonicTraces(data.fm2, maxFrequency, "#1b5e20", "Harmônicas Fm2")
     ].map((trace) => ({
       ...trace,
       y: [0, ymax]
     }));
+    const bandShapes = [
+      ...buildFrequencyBandShapes(data.fm1, maxFrequency, "rgba(224, 49, 49, 0.10)"),
+      ...buildFrequencyBandShapes(data.fm2, maxFrequency, "rgba(27, 94, 32, 0.10)")
+    ];
 
     Plotly.react(
       ref.current,
@@ -154,7 +183,8 @@ function FftChart({ data }) {
         plot_bgcolor: "#ffffff",
         xaxis: { title: "Frequência (Hz)", gridcolor: "#e9eef2" },
         yaxis: { title: "Amplitude", gridcolor: "#e9eef2" },
-        legend: { orientation: "h" }
+        legend: { orientation: "h" },
+        shapes: bandShapes
       },
       { responsive: true, displaylogo: false }
     );

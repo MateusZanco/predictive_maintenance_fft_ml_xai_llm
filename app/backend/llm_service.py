@@ -40,6 +40,8 @@ class LocalLlamaExplanationService:
     <RULE>Do not invent ranges, thresholds, causes, severity, symptoms, or mechanisms.</RULE>
     <RULE>Do not compare values with normal ranges, baselines, or expected values.</RULE>
     <RULE>Mention only concepts supported by the variable families present in OBSERVED_EVIDENCE.</RULE>
+    <RULE>Prefer technically precise wording in Brazilian Portuguese, especially for spectral quantities, harmonic orders, and time-domain metrics.</RULE>
+    <RULE>Do not infer a specific damage mechanism solely from one isolated harmonic-band metric.</RULE>
     <RULE>Use cautious wording for mechanical interpretation.</RULE>
     <RULE>Do not mention SHAP, model, AI, algorithm, or prompt.</RULE>
     <RULE>Write only in Brazilian Portuguese.</RULE>
@@ -47,14 +49,14 @@ class LocalLlamaExplanationService:
   </RULES>
   <LEGEND>
     <TIME_DOMAIN_VARIABLES>
-      <VARIABLE name="RMS" concept="nível global de vibração">global vibration level of the segment on the analyzed axis</VARIABLE>
-      <VARIABLE name="kurtosis" concept="impulsividade do sinal no tempo">impulsiveness of the time signal on the analyzed axis</VARIABLE>
-      <VARIABLE name="peak_value" concept="valor de pico no sinal no tempo">highest absolute amplitude observed in the segment on the analyzed axis</VARIABLE>
-      <VARIABLE name="crest_factor" concept="relação entre pico e RMS">ratio between peak value and RMS on the analyzed axis</VARIABLE>
+      <VARIABLE name="RMS" concept="valor RMS e nível global de vibração">root-mean-square amplitude of the time segment on the analyzed axis</VARIABLE>
+      <VARIABLE name="kurtosis" concept="impulsividade do sinal no tempo">fourth standardized moment of the time signal on the analyzed axis</VARIABLE>
+      <VARIABLE name="peak_value" concept="valor de pico no sinal no tempo">highest absolute amplitude observed in the time segment on the analyzed axis</VARIABLE>
+      <VARIABLE name="crest_factor" concept="fator de crista e relação entre valor de pico e RMS">ratio between peak value and RMS on the analyzed axis</VARIABLE>
     </TIME_DOMAIN_VARIABLES>
     <FREQUENCY_DOMAIN_VARIABLES>
-      <VARIABLE name="energy_around_harmonic" concept="concentração de energia em bandas harmônicas">spectral energy inside a +/-10 Hz band around an Fm1 or Fm2 harmonic</VARIABLE>
-      <VARIABLE name="maximum_amplitude_around_harmonic" concept="amplitude máxima em banda harmônica">highest spectral amplitude inside a +/-10 Hz band around an Fm1 or Fm2 harmonic</VARIABLE>
+      <VARIABLE name="energy_around_harmonic" concept="energia espectral e concentração de energia espectral em bandas harmônicas">spectral energy inside a ±10 Hz band around an Fm1 or Fm2 harmonic</VARIABLE>
+      <VARIABLE name="maximum_amplitude_around_harmonic" concept="amplitude espectral máxima em banda harmônica">highest spectral amplitude inside a ±10 Hz band around an Fm1 or Fm2 harmonic</VARIABLE>
     </FREQUENCY_DOMAIN_VARIABLES>
     <ATTRIBUTION_TERMS>
       <TERM name="contributed_positively">this variable pushed the predicted class upward</TERM>
@@ -64,7 +66,7 @@ class LocalLlamaExplanationService:
   </LEGEND>
   <TASK>
     <VIBRATIONAL>Use all 5 evidence items listed in OBSERVED_EVIDENCE.</VIBRATIONAL>
-    <VIBRATIONAL>Cite variable, axis or harmonic, value, and approximate local importance.</VIBRATIONAL>
+    <VIBRATIONAL>Cite variable, axis or harmonic order, value, and approximate local importance.</VIBRATIONAL>
     <VIBRATIONAL>If you summarize, use only concepts supported by the listed evidence.</VIBRATIONAL>
     <MECHANICAL>State only whether the evidence is compatible with the predicted class, with cautious wording.</MECHANICAL>
     <MECHANICAL>Include the predicted class probability as "probabilidade estimada de X% para a classe predita".</MECHANICAL>
@@ -208,16 +210,16 @@ class LocalLlamaExplanationService:
   <PREDICTED_CLASS>Dente Trincado</PREDICTED_CLASS>
   <PREDICTED_CLASS_PROBABILITY>0.9925</PREDICTED_CLASS_PROBABILITY>
   <OBSERVED_EVIDENCE>
-      <EVIDENCE index="1">RMS on axis Y = 0.214310; contributed positively to the predicted class; approximate local importance = 28.7%.</EVIDENCE>
-      <EVIDENCE index="2">energy around harmonic 1 of Fm2 on axis X = 0.004812; contributed positively to the predicted class; approximate local importance = 24.9%.</EVIDENCE>
-      <EVIDENCE index="3">maximum amplitude around harmonic 2 of Fm2 on axis Z = 0.021334; contributed positively to the predicted class; approximate local importance = 19.8%.</EVIDENCE>
+      <EVIDENCE index="1">RMS value on axis Y = 0.214310; contributed positively to the predicted class; approximate local importance = 28.7%.</EVIDENCE>
+      <EVIDENCE index="2">spectral energy within the ±10 Hz band around the 1st-order harmonic of Fm2 on axis X = 0.004812; contributed positively to the predicted class; approximate local importance = 24.9%.</EVIDENCE>
+      <EVIDENCE index="3">maximum spectral amplitude within the ±10 Hz band around the 2nd-order harmonic of Fm2 on axis Z = 0.021334; contributed positively to the predicted class; approximate local importance = 19.8%.</EVIDENCE>
       <EVIDENCE index="4">crest factor on axis Z = 5.184220; contributed positively to the predicted class; approximate local importance = 11.5%.</EVIDENCE>
-      <EVIDENCE index="5">RMS on axis X = 0.118400; contributed positively to the predicted class; approximate local importance = 8.2%.</EVIDENCE>
+      <EVIDENCE index="5">RMS value on axis X = 0.118400; contributed positively to the predicted class; approximate local importance = 8.2%.</EVIDENCE>
   </OBSERVED_EVIDENCE>
 </USER_PROMPT>"""
 
         example_assistant_1 = """{
-  "interpretacao_vibracional": "A janela apresenta RMS no eixo Y = 0.214310, com importância local aproximada de 28.7%, energia em torno da harmônica 1 de Fm2 no eixo X = 0.004812, com 24.9%, amplitude máxima em torno da harmônica 2 de Fm2 no eixo Z = 0.021334, com 19.8%, crest factor no eixo Z = 5.184220, com 11.5%, e RMS no eixo X = 0.118400, com 8.2%. Essas evidências descrevem nível global de vibração, concentração de energia em bandas harmônicas, amplitude máxima em banda harmônica e relação entre pico e RMS nesta janela.",
+  "interpretacao_vibracional": "A janela apresenta valor RMS no eixo Y = 0.214310, com importância local aproximada de 28.7%, energia espectral na faixa de ±10 Hz em torno da harmônica de 1ª ordem de Fm2 no eixo X = 0.004812, com 24.9%, amplitude espectral máxima na faixa de ±10 Hz em torno da harmônica de 2ª ordem de Fm2 no eixo Z = 0.021334, com 19.8%, fator de crista no eixo Z = 5.184220, com 11.5%, e valor RMS no eixo X = 0.118400, com 8.2%. Essas evidências descrevem valor RMS e nível global de vibração, energia espectral em bandas harmônicas, amplitude espectral máxima em banda harmônica e fator de crista nesta janela.",
   "interpretacao_mecanica": "O conjunto de evidências é compatível com a classe predita de Dente Trincado, com probabilidade estimada de 99.3% para a classe predita. Essa interpretação deve ser vista com cautela, porque as evidências fornecidas descrevem variáveis do sinal e bandas harmônicas relevantes, mas não constituem confirmação direta de um mecanismo específico de falha."
 }"""
 
@@ -225,16 +227,16 @@ class LocalLlamaExplanationService:
   <PREDICTED_CLASS>Desgaste Superficial</PREDICTED_CLASS>
   <PREDICTED_CLASS_PROBABILITY>0.9640</PREDICTED_CLASS_PROBABILITY>
   <OBSERVED_EVIDENCE>
-      <EVIDENCE index="1">RMS on axis X = 0.091390; contributed positively to the predicted class; approximate local importance = 24.6%.</EVIDENCE>
+      <EVIDENCE index="1">RMS value on axis X = 0.091390; contributed positively to the predicted class; approximate local importance = 24.6%.</EVIDENCE>
       <EVIDENCE index="2">peak value on axis Y = 0.969533; contributed positively to the predicted class; approximate local importance = 21.4%.</EVIDENCE>
-      <EVIDENCE index="3">energy around harmonic 2 of Fm1 on axis Y = 0.008880; contributed positively to the predicted class; approximate local importance = 15.6%.</EVIDENCE>
-      <EVIDENCE index="4">maximum amplitude around harmonic 5 of Fm1 on axis X = 0.003614; contributed positively to the predicted class; approximate local importance = 9.9%.</EVIDENCE>
-      <EVIDENCE index="5">energy around harmonic 5 of Fm1 on axis Y = 0.000314; contributed positively to the predicted class; approximate local importance = 9.4%.</EVIDENCE>
+      <EVIDENCE index="3">spectral energy within the ±10 Hz band around the 2nd-order harmonic of Fm1 on axis Y = 0.008880; contributed positively to the predicted class; approximate local importance = 15.6%.</EVIDENCE>
+      <EVIDENCE index="4">maximum spectral amplitude within the ±10 Hz band around the 5th-order harmonic of Fm1 on axis X = 0.003614; contributed positively to the predicted class; approximate local importance = 9.9%.</EVIDENCE>
+      <EVIDENCE index="5">spectral energy within the ±10 Hz band around the 5th-order harmonic of Fm1 on axis Y = 0.000314; contributed positively to the predicted class; approximate local importance = 9.4%.</EVIDENCE>
   </OBSERVED_EVIDENCE>
 </USER_PROMPT>"""
 
         example_assistant_2 = """{
-  "interpretacao_vibracional": "A janela apresenta RMS no eixo X = 0.091390, com importância local aproximada de 24.6%, valor de pico no eixo Y = 0.969533, com 21.4%, energia em torno da harmônica 2 de Fm1 no eixo Y = 0.008880, com 15.6%, amplitude máxima em torno da harmônica 5 de Fm1 no eixo X = 0.003614, com 9.9%, e energia em torno da harmônica 5 de Fm1 no eixo Y = 0.000314, com 9.4%. Essas evidências descrevem nível global de vibração, valor de pico no sinal no tempo, concentração de energia em bandas harmônicas e amplitude máxima em banda harmônica nesta janela.",
+  "interpretacao_vibracional": "A janela apresenta valor RMS no eixo X = 0.091390, com importância local aproximada de 24.6%, valor de pico no eixo Y = 0.969533, com 21.4%, energia espectral na faixa de ±10 Hz em torno da harmônica de 2ª ordem de Fm1 no eixo Y = 0.008880, com 15.6%, amplitude espectral máxima na faixa de ±10 Hz em torno da harmônica de 5ª ordem de Fm1 no eixo X = 0.003614, com 9.9%, e energia espectral na faixa de ±10 Hz em torno da harmônica de 5ª ordem de Fm1 no eixo Y = 0.000314, com 9.4%. Essas evidências descrevem valor RMS e nível global de vibração, valor de pico no sinal no tempo, energia espectral em bandas harmônicas e amplitude espectral máxima em banda harmônica nesta janela.",
   "interpretacao_mecanica": "O conjunto de evidências é compatível com a classe predita de Desgaste Superficial, com probabilidade estimada de 96.4% para a classe predita. Essa interpretação deve ser vista com cautela, porque as evidências fornecidas descrevem variáveis do sinal e bandas harmônicas relevantes, mas não constituem confirmação direta de um mecanismo específico de falha."
 }"""
 
@@ -242,17 +244,17 @@ class LocalLlamaExplanationService:
   <PREDICTED_CLASS>Normal</PREDICTED_CLASS>
   <PREDICTED_CLASS_PROBABILITY>0.9510</PREDICTED_CLASS_PROBABILITY>
   <OBSERVED_EVIDENCE>
-      <EVIDENCE index="1">RMS on axis Y = 0.170664; contributed positively to the predicted class; approximate local importance = 31.5%.</EVIDENCE>
-      <EVIDENCE index="2">RMS on axis Z = 0.240076; contributed positively to the predicted class; approximate local importance = 18.6%.</EVIDENCE>
-      <EVIDENCE index="3">energy around harmonic 5 of Fm2 on axis Y = 0.000190; contributed positively to the predicted class; approximate local importance = 10.6%.</EVIDENCE>
-      <EVIDENCE index="4">RMS on axis X = 0.083640; contributed positively to the predicted class; approximate local importance = 7.6%.</EVIDENCE>
-      <EVIDENCE index="5">energy around harmonic 1 of Fm1 on axis Y = 0.001764; contributed positively to the predicted class; approximate local importance = 6.4%.</EVIDENCE>
+      <EVIDENCE index="1">RMS value on axis Y = 0.170664; contributed positively to the predicted class; approximate local importance = 31.5%.</EVIDENCE>
+      <EVIDENCE index="2">RMS value on axis Z = 0.240076; contributed positively to the predicted class; approximate local importance = 18.6%.</EVIDENCE>
+      <EVIDENCE index="3">spectral energy within the ±10 Hz band around the 5th-order harmonic of Fm2 on axis Y = 0.000190; contributed positively to the predicted class; approximate local importance = 10.6%.</EVIDENCE>
+      <EVIDENCE index="4">RMS value on axis X = 0.083640; contributed positively to the predicted class; approximate local importance = 7.6%.</EVIDENCE>
+      <EVIDENCE index="5">spectral energy within the ±10 Hz band around the 1st-order harmonic of Fm1 on axis Y = 0.001764; contributed positively to the predicted class; approximate local importance = 6.4%.</EVIDENCE>
   </OBSERVED_EVIDENCE>
 </USER_PROMPT>"""
 
         example_assistant_3 = """{
-  "interpretacao_vibracional": "A janela apresenta RMS no eixo Y = 0.170664, com importância local aproximada de 31.5%, RMS no eixo Z = 0.240076, com 18.6%, energia em torno da harmônica 5 de Fm2 no eixo Y = 0.000190, com 10.6%, RMS no eixo X = 0.083640, com 7.6%, e energia em torno da harmônica 1 de Fm1 no eixo Y = 0.001764, com 6.4%. Essas evidências descrevem nível global de vibração e concentração de energia em bandas harmônicas nesta janela.",
-  "interpretacao_mecanica": "O conjunto de evidências é mais compatível com a classe predita de Normal, com probabilidade estimada de 95.1% para a classe predita. Essa interpretação deve ser vista com cautela, porque as evidências fornecidas descrevem variáveis do sinal e bandas harmônicas relevantes, sem indicar confirmação direta de um mecanismo específico de falha."
+  "interpretacao_vibracional": "A janela apresenta valor RMS no eixo Y = 0.170664, com importância local aproximada de 31.5%, valor RMS no eixo Z = 0.240076, com 18.6%, energia espectral na faixa de ±10 Hz em torno da harmônica de 5ª ordem de Fm2 no eixo Y = 0.000190, com 10.6%, valor RMS no eixo X = 0.083640, com 7.6%, e energia espectral na faixa de ±10 Hz em torno da harmônica de 1ª ordem de Fm1 no eixo Y = 0.001764, com 6.4%. Essas evidências descrevem valor RMS e nível global de vibração, além de energia espectral em bandas harmônicas nesta janela.",
+  "interpretacao_mecanica": "O conjunto de evidências é compatível com a classe predita de Normal, com probabilidade estimada de 95.1% para a classe predita. Essa interpretação deve ser vista com cautela, porque as evidências fornecidas descrevem variáveis do sinal e bandas harmônicas relevantes, sem constituir confirmação direta de um mecanismo específico de falha."
 }"""
 
         return [
@@ -274,7 +276,7 @@ class LocalLlamaExplanationService:
         if feature.startswith("rms_"):
             axis = feature.split("_")[-1].upper()
             return (
-                f"RMS on axis {axis} = {value:.6f}; "
+                f"RMS value on axis {axis} = {value:.6f}; "
                 f"contributed {direction} to the predicted class; "
                 f"approximate local importance = {impact_pct:.1f}%."
             )
@@ -304,7 +306,7 @@ class LocalLlamaExplanationService:
             harmonic = parts[2].replace("h", "")
             axis = parts[-1].upper()
             return (
-                f"energy around harmonic {harmonic} of Fm1 on axis {axis} = {value:.6f}; "
+                f"spectral energy within the ±10 Hz band around the {self._ordinal_order_label(harmonic)}-order harmonic of Fm1 on axis {axis} = {value:.6f}; "
                 f"contributed {direction} to the predicted class; "
                 f"approximate local importance = {impact_pct:.1f}%."
             )
@@ -313,7 +315,7 @@ class LocalLlamaExplanationService:
             harmonic = parts[3].replace("h", "")
             axis = parts[-1].upper()
             return (
-                f"maximum amplitude around harmonic {harmonic} of Fm1 on axis {axis} = {value:.6f}; "
+                f"maximum spectral amplitude within the ±10 Hz band around the {self._ordinal_order_label(harmonic)}-order harmonic of Fm1 on axis {axis} = {value:.6f}; "
                 f"contributed {direction} to the predicted class; "
                 f"approximate local importance = {impact_pct:.1f}%."
             )
@@ -322,7 +324,7 @@ class LocalLlamaExplanationService:
             harmonic = parts[2].replace("h", "")
             axis = parts[-1].upper()
             return (
-                f"energy around harmonic {harmonic} of Fm2 on axis {axis} = {value:.6f}; "
+                f"spectral energy within the ±10 Hz band around the {self._ordinal_order_label(harmonic)}-order harmonic of Fm2 on axis {axis} = {value:.6f}; "
                 f"contributed {direction} to the predicted class; "
                 f"approximate local importance = {impact_pct:.1f}%."
             )
@@ -331,7 +333,7 @@ class LocalLlamaExplanationService:
             harmonic = parts[3].replace("h", "")
             axis = parts[-1].upper()
             return (
-                f"maximum amplitude around harmonic {harmonic} of Fm2 on axis {axis} = {value:.6f}; "
+                f"maximum spectral amplitude within the ±10 Hz band around the {self._ordinal_order_label(harmonic)}-order harmonic of Fm2 on axis {axis} = {value:.6f}; "
                 f"contributed {direction} to the predicted class; "
                 f"approximate local importance = {impact_pct:.1f}%."
             )
@@ -340,7 +342,7 @@ class LocalLlamaExplanationService:
             harmonic = parts[3].replace("h", "")
             axis = parts[-1].upper()
             return (
-                f"relative energy around harmonic {harmonic} of Fm2 on axis {axis} = {value:.6f}; "
+                f"relative spectral energy within the ±10 Hz band around the {self._ordinal_order_label(harmonic)}-order harmonic of Fm2 on axis {axis} = {value:.6f}; "
                 f"contributed {direction} to the predicted class; "
                 f"approximate local importance = {impact_pct:.1f}%."
             )
@@ -349,7 +351,7 @@ class LocalLlamaExplanationService:
             ratio_name = parts[3].upper()
             axis = parts[-1].upper()
             return (
-                f"harmonic energy ratio {ratio_name} on axis {axis} = {value:.6f}; "
+                f"harmonic-band spectral energy ratio {ratio_name} on axis {axis} = {value:.6f}; "
                 f"contributed {direction} to the predicted class; "
                 f"approximate local importance = {impact_pct:.1f}%."
             )
@@ -358,7 +360,7 @@ class LocalLlamaExplanationService:
             ratio_name = parts[3].upper()
             axis = parts[-1].upper()
             return (
-                f"harmonic amplitude ratio {ratio_name} on axis {axis} = {value:.6f}; "
+                f"harmonic-band maximum spectral amplitude ratio {ratio_name} on axis {axis} = {value:.6f}; "
                 f"contributed {direction} to the predicted class; "
                 f"approximate local importance = {impact_pct:.1f}%."
             )
@@ -367,6 +369,14 @@ class LocalLlamaExplanationService:
             f"contributed {direction} to the predicted class; "
             f"approximate local importance = {impact_pct:.1f}%."
         )
+
+    def _ordinal_order_label(self, harmonic: str) -> str:
+        order = int(harmonic)
+        if 10 <= order % 100 <= 20:
+            suffix = "th"
+        else:
+            suffix = {1: "st", 2: "nd", 3: "rd"}.get(order % 10, "th")
+        return f"{order}{suffix}"
 
     def _extract_json_object(self, text: str) -> dict[str, Any]:
         cleaned = text.strip()
