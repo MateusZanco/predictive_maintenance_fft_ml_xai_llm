@@ -370,7 +370,24 @@ function TimingPanel({ predictionData, shapData, explanationData, explanationLoa
   );
 }
 
-function ExplanationPanel({ data, error, loading, onGenerate, disabled, promptStrategy, onPromptStrategyChange }) {
+function formatAudienceProfileLabel(value) {
+  if (value === "engenharia") return "Engenharia";
+  if (value === "manutencao") return "Manutenção";
+  if (value === "operacao") return "Operação";
+  return value || "";
+}
+
+function ExplanationPanel({
+  data,
+  error,
+  loading,
+  onGenerate,
+  disabled,
+  promptStrategy,
+  onPromptStrategyChange,
+  audienceProfile,
+  onAudienceProfileChange
+}) {
   function formatProcessedAt(value) {
     if (!value) return "";
     const parsed = new Date(value);
@@ -394,6 +411,14 @@ function ExplanationPanel({ data, error, loading, onGenerate, disabled, promptSt
             <option value="zero_shot">Zero-shot</option>
           </select>
         </label>
+        <label style={{ display: "flex", gap: 8, alignItems: "center" }}>
+          <span>Perfil</span>
+          <select value={audienceProfile} onChange={(e) => onAudienceProfileChange(e.target.value)} disabled={loading}>
+            <option value="engenharia">Engenharia</option>
+            <option value="manutencao">Manutenção</option>
+            <option value="operacao">Operação</option>
+          </select>
+        </label>
         <button type="button" onClick={onGenerate} disabled={disabled || loading}>
           {loading ? "Gerando explicação..." : "Gerar explicação"}
         </button>
@@ -410,6 +435,9 @@ function ExplanationPanel({ data, error, loading, onGenerate, disabled, promptSt
           </div>
           <div>
             <strong>Estratégia prompt:</strong> {data.prompt_strategy}
+          </div>
+          <div>
+            <strong>Perfil da resposta:</strong> {formatAudienceProfileLabel(data.audience_profile)}
           </div>
           <div>
             <strong>Formato resposta:</strong> {data.response_format === "raw_text" ? "texto livre" : "json"}
@@ -515,6 +543,7 @@ export default function App() {
   const [shapResult, setShapResult] = useState(null);
   const [shapError, setShapError] = useState("");
   const [promptStrategy, setPromptStrategy] = useState("few_shot");
+  const [audienceProfile, setAudienceProfile] = useState("engenharia");
   const [explanationResult, setExplanationResult] = useState(null);
   const [explanationError, setExplanationError] = useState("");
   const [explanationLoading, setExplanationLoading] = useState(false);
@@ -664,7 +693,8 @@ export default function App() {
         sample_id: selectedSample,
         window_index: Number(windowIndex),
         top_k: 5,
-        prompt_strategy: promptStrategy
+        prompt_strategy: promptStrategy,
+        audience_profile: audienceProfile
       });
       setExplanationResult(data);
     } catch (err) {
@@ -824,6 +854,8 @@ export default function App() {
           disabled={!predictionResult}
           promptStrategy={promptStrategy}
           onPromptStrategyChange={setPromptStrategy}
+          audienceProfile={audienceProfile}
+          onAudienceProfileChange={setAudienceProfile}
         />
       </section>
     </main>

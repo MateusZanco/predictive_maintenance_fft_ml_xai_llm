@@ -338,6 +338,7 @@ def explain_window_llm(request: ExplainRequest) -> ExplainResponse:
                 predicted_probability=shap_explanation["predicted_probability"],
                 top_contributions=shap_explanation["top_contributions"],
                 prompt_strategy=request.prompt_strategy,
+                audience_profile=request.audience_profile,
             )
             llm_processing_seconds = perf_counter() - llm_started_at
         except (KeyError, IndexError, ValueError) as exc:
@@ -368,6 +369,7 @@ def explain_window_llm(request: ExplainRequest) -> ExplainResponse:
         processed_at_iso=processed_at_iso,
         llm_processing_seconds=llm_processing_seconds,
         prompt_strategy=request.prompt_strategy,
+        audience_profile=request.audience_profile,
         response_format=llm_explanation["response_format"],
         predicted_class=shap_explanation["predicted_class"],
         predicted_class_name=shap_explanation["predicted_class_name"],

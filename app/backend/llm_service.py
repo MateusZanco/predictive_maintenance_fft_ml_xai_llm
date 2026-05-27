@@ -8,6 +8,9 @@ from urllib import error, request
 from xml.sax.saxutils import escape
 
 
+AudienceProfile = str
+
+
 class LocalLlamaExplanationService:
     def __init__(self) -> None:
         self.chat_completions_url = os.getenv("LLM_CHAT_COMPLETIONS_URL", "http://127.0.0.1:8080/v1/chat/completions")
@@ -24,12 +27,17 @@ class LocalLlamaExplanationService:
         predicted_probability: float,
         top_contributions: list[dict[str, Any]],
         prompt_strategy: str = "few_shot",
+        audience_profile: AudienceProfile = "engenharia",
         concise: bool = False,
     ) -> tuple[str, str, list[dict[str, str]]]:
         del condicao_operacao
         del concise
+        audience_profile = self._normalize_audience_profile(audience_profile)
+        audience_rule = escape(self._audience_profile_rule(audience_profile))
+        audience_vibrational_instruction = escape(self._audience_vibrational_instruction(audience_profile))
+        audience_mechanical_instruction = escape(self._audience_mechanical_instruction(audience_profile))
 
-        system_prompt = """<SYSTEM_PROMPT>
+        system_prompt = f"""<SYSTEM_PROMPT>
   <ROLE>You are a specialist in vibration analysis for planetary gearboxes.</ROLE>
   <FIXED_CONTEXT>
     <EQUIPMENT>two-stage planetary gearbox</EQUIPMENT>
@@ -64,25 +72,31 @@ class LocalLlamaExplanationService:
       <TERM name="approximate_local_importance">share of absolute local explanatory impact in the current window</TERM>
     </ATTRIBUTION_TERMS>
   </LEGEND>
+  <ACTIVE_AUDIENCE_PROFILE name="{audience_profile}">{audience_rule}</ACTIVE_AUDIENCE_PROFILE>
   <TASK>
     <VIBRATIONAL>Use all 5 evidence items listed in OBSERVED_EVIDENCE.</VIBRATIONAL>
     <VIBRATIONAL>Cite variable, axis or harmonic order, value, and approximate local importance.</VIBRATIONAL>
+    <VIBRATIONAL>Adapt the wording to AUDIENCE_PROFILE while preserving technical truthfulness.</VIBRATIONAL>
     <VIBRATIONAL>If you summarize, use only concepts supported by the listed evidence.</VIBRATIONAL>
+    <VIBRATIONAL>{audience_vibrational_instruction}</VIBRATIONAL>
     <MECHANICAL>State only whether the evidence is compatible with the predicted class, with cautious wording.</MECHANICAL>
     <MECHANICAL>Include the predicted class probability as "probabilidade estimada de X% para a classe predita".</MECHANICAL>
+    <MECHANICAL>Adapt the wording to AUDIENCE_PROFILE while avoiding maintenance recommendations.</MECHANICAL>
+    <MECHANICAL>{audience_mechanical_instruction}</MECHANICAL>
   </TASK>
   <PROCEDURE>
     <STEP>Read only the evidence items listed in OBSERVED_EVIDENCE.</STEP>
+    <STEP>Read AUDIENCE_PROFILE and follow the corresponding style rule.</STEP>
     <STEP>Identify which variable families are present.</STEP>
     <STEP>Use only the concepts supported by those variable families.</STEP>
     <STEP>Write interpretacao_vibracional using all 5 listed evidence items, including value and approximate local importance.</STEP>
     <STEP>Write interpretacao_mecanica only as compatibility with the predicted class, including the predicted probability and cautious wording.</STEP>
     <STEP>Return only the JSON object defined in OUTPUT_FORMAT.</STEP>
   </PROCEDURE>
-  <OUTPUT_FORMAT>{
+  <OUTPUT_FORMAT>{{
   "interpretacao_vibracional": "...",
   "interpretacao_mecanica": "..."
-}</OUTPUT_FORMAT>
+}}</OUTPUT_FORMAT>
 </SYSTEM_PROMPT>"""
 
         evidence_lines = [
@@ -91,6 +105,7 @@ class LocalLlamaExplanationService:
         ]
 
         user_prompt = f"""<USER_PROMPT>
+  <AUDIENCE_PROFILE>{escape(audience_profile)}</AUDIENCE_PROFILE>
   <PREDICTED_CLASS>{escape(predicted_class_name)}</PREDICTED_CLASS>
   <PREDICTED_CLASS_PROBABILITY>{predicted_probability:.4f}</PREDICTED_CLASS_PROBABILITY>
   <OBSERVED_EVIDENCE>
@@ -100,7 +115,7 @@ class LocalLlamaExplanationService:
 
         messages = [{"role": "system", "content": system_prompt}]
         if prompt_strategy == "few_shot":
-            messages.extend(self._few_shot_examples())
+            messages.extend(self._few_shot_examples(audience_profile))
         messages.append({"role": "user", "content": user_prompt})
         return system_prompt, user_prompt, messages
 
@@ -111,6 +126,7 @@ class LocalLlamaExplanationService:
         predicted_probability: float,
         top_contributions: list[dict[str, Any]],
         prompt_strategy: str = "few_shot",
+        audience_profile: AudienceProfile = "engenharia",
     ) -> dict[str, Any]:
         system_prompt, user_prompt, messages = self.build_messages(
             condicao_operacao=condicao_operacao,
@@ -118,6 +134,7 @@ class LocalLlamaExplanationService:
             predicted_probability=predicted_probability,
             top_contributions=top_contributions,
             prompt_strategy=prompt_strategy,
+            audience_profile=audience_profile,
         )
 
         content = self._chat_completion(messages, self.max_tokens)
@@ -205,8 +222,57 @@ class LocalLlamaExplanationService:
             },
         }
 
-    def _few_shot_examples(self) -> list[dict[str, str]]:
-        example_user_1 = """<USER_PROMPT>
+    def _normalize_audience_profile(self, audience_profile: AudienceProfile) -> AudienceProfile:
+        if audience_profile in {"engenharia", "manutencao", "operacao"}:
+            return audience_profile
+        return "engenharia"
+
+    def _audience_profile_rule(self, audience_profile: AudienceProfile) -> str:
+        rules = {
+            "engenharia": (
+                "Use the most rigorous technical vocabulary available in the provided evidence. "
+                "Distinguish clearly between time-domain metrics and frequency-domain harmonic-band metrics."
+            ),
+            "manutencao": (
+                "Keep technical accuracy, but prefer practical maintenance-oriented wording. "
+                "Explain what each relevant quantity represents in practice, such as level of overall vibration, "
+                "strongest signal peak, vibration concentrated at a specific harmonic order of the first or second stage, "
+                "or maximum intensity observed at that harmonic. Avoid overly academic wording."
+            ),
+            "operacao": (
+                "Use simpler wording, shorter sentences, and minimal jargon. "
+                "Do not use the terms RMS, kurtosis, crest factor, harmonic, spectral energy, spectral amplitude, Fm1, or Fm2 in the final text. "
+                "Translate them into accessible phrases such as overall vibration level, strongest signal peak, difference between peaks and overall level, "
+                "or vibration concentrated in a specific band of the first or second stage. Keep the exact values and the axis or stage reference."
+            ),
+        }
+        return rules[self._normalize_audience_profile(audience_profile)]
+
+    def _audience_vibrational_instruction(self, audience_profile: AudienceProfile) -> str:
+        instructions = {
+            "engenharia": (
+                "Preserve the most rigorous technical wording and explicit distinction between time-domain and harmonic-band evidence."
+            ),
+            "manutencao": (
+                "Explain in practical vibration-monitoring terms what each variable represents and what in the signal deserves technical attention."
+            ),
+            "operacao": (
+                "Explain the same evidence in plain operational language focused on what the machine signal is showing."
+            ),
+        }
+        return instructions[self._normalize_audience_profile(audience_profile)]
+
+    def _audience_mechanical_instruction(self, audience_profile: AudienceProfile) -> str:
+        instructions = {
+            "engenharia": "Keep the most technical tone.",
+            "manutencao": "Keep a practical diagnostic tone centered on what the signal is indicating.",
+            "operacao": "Explicitly state in simple language that the listed variables led the model to the predicted class.",
+        }
+        return instructions[self._normalize_audience_profile(audience_profile)]
+
+    def _few_shot_examples(self, audience_profile: AudienceProfile) -> list[dict[str, str]]:
+        example_user_1 = f"""<USER_PROMPT>
+  <AUDIENCE_PROFILE>{escape(audience_profile)}</AUDIENCE_PROFILE>
   <PREDICTED_CLASS>Dente Trincado</PREDICTED_CLASS>
   <PREDICTED_CLASS_PROBABILITY>0.9925</PREDICTED_CLASS_PROBABILITY>
   <OBSERVED_EVIDENCE>
@@ -218,12 +284,8 @@ class LocalLlamaExplanationService:
   </OBSERVED_EVIDENCE>
 </USER_PROMPT>"""
 
-        example_assistant_1 = """{
-  "interpretacao_vibracional": "A janela apresenta valor RMS no eixo Y = 0.214310, com importância local aproximada de 28.7%, energia espectral na faixa de ±10 Hz em torno da harmônica de 1ª ordem de Fm2 no eixo X = 0.004812, com 24.9%, amplitude espectral máxima na faixa de ±10 Hz em torno da harmônica de 2ª ordem de Fm2 no eixo Z = 0.021334, com 19.8%, fator de crista no eixo Z = 5.184220, com 11.5%, e valor RMS no eixo X = 0.118400, com 8.2%. Essas evidências descrevem valor RMS e nível global de vibração, energia espectral em bandas harmônicas, amplitude espectral máxima em banda harmônica e fator de crista nesta janela.",
-  "interpretacao_mecanica": "O conjunto de evidências é compatível com a classe predita de Dente Trincado, com probabilidade estimada de 99.3% para a classe predita. Essa interpretação deve ser vista com cautela, porque as evidências fornecidas descrevem variáveis do sinal e bandas harmônicas relevantes, mas não constituem confirmação direta de um mecanismo específico de falha."
-}"""
-
-        example_user_2 = """<USER_PROMPT>
+        example_user_2 = f"""<USER_PROMPT>
+  <AUDIENCE_PROFILE>{escape(audience_profile)}</AUDIENCE_PROFILE>
   <PREDICTED_CLASS>Desgaste Superficial</PREDICTED_CLASS>
   <PREDICTED_CLASS_PROBABILITY>0.9640</PREDICTED_CLASS_PROBABILITY>
   <OBSERVED_EVIDENCE>
@@ -235,12 +297,8 @@ class LocalLlamaExplanationService:
   </OBSERVED_EVIDENCE>
 </USER_PROMPT>"""
 
-        example_assistant_2 = """{
-  "interpretacao_vibracional": "A janela apresenta valor RMS no eixo X = 0.091390, com importância local aproximada de 24.6%, valor de pico no eixo Y = 0.969533, com 21.4%, energia espectral na faixa de ±10 Hz em torno da harmônica de 2ª ordem de Fm1 no eixo Y = 0.008880, com 15.6%, amplitude espectral máxima na faixa de ±10 Hz em torno da harmônica de 5ª ordem de Fm1 no eixo X = 0.003614, com 9.9%, e energia espectral na faixa de ±10 Hz em torno da harmônica de 5ª ordem de Fm1 no eixo Y = 0.000314, com 9.4%. Essas evidências descrevem valor RMS e nível global de vibração, valor de pico no sinal no tempo, energia espectral em bandas harmônicas e amplitude espectral máxima em banda harmônica nesta janela.",
-  "interpretacao_mecanica": "O conjunto de evidências é compatível com a classe predita de Desgaste Superficial, com probabilidade estimada de 96.4% para a classe predita. Essa interpretação deve ser vista com cautela, porque as evidências fornecidas descrevem variáveis do sinal e bandas harmônicas relevantes, mas não constituem confirmação direta de um mecanismo específico de falha."
-}"""
-
-        example_user_3 = """<USER_PROMPT>
+        example_user_3 = f"""<USER_PROMPT>
+  <AUDIENCE_PROFILE>{escape(audience_profile)}</AUDIENCE_PROFILE>
   <PREDICTED_CLASS>Normal</PREDICTED_CLASS>
   <PREDICTED_CLASS_PROBABILITY>0.9510</PREDICTED_CLASS_PROBABILITY>
   <OBSERVED_EVIDENCE>
@@ -252,18 +310,60 @@ class LocalLlamaExplanationService:
   </OBSERVED_EVIDENCE>
 </USER_PROMPT>"""
 
-        example_assistant_3 = """{
+        examples_by_audience = {
+            "engenharia": [
+                """{
+  "interpretacao_vibracional": "A janela apresenta valor RMS no eixo Y = 0.214310, com importância local aproximada de 28.7%, energia espectral na faixa de ±10 Hz em torno da harmônica de 1ª ordem de Fm2 no eixo X = 0.004812, com 24.9%, amplitude espectral máxima na faixa de ±10 Hz em torno da harmônica de 2ª ordem de Fm2 no eixo Z = 0.021334, com 19.8%, fator de crista no eixo Z = 5.184220, com 11.5%, e valor RMS no eixo X = 0.118400, com 8.2%. Essas evidências descrevem valor RMS e nível global de vibração, energia espectral em bandas harmônicas, amplitude espectral máxima em banda harmônica e fator de crista nesta janela.",
+  "interpretacao_mecanica": "O conjunto de evidências é compatível com a classe predita de Dente Trincado, com probabilidade estimada de 99.3% para a classe predita. Essa interpretação deve ser vista com cautela, porque as evidências fornecidas descrevem variáveis do sinal e bandas harmônicas relevantes, mas não constituem confirmação direta de um mecanismo específico de falha."
+}""",
+                """{
+  "interpretacao_vibracional": "A janela apresenta valor RMS no eixo X = 0.091390, com importância local aproximada de 24.6%, valor de pico no eixo Y = 0.969533, com 21.4%, energia espectral na faixa de ±10 Hz em torno da harmônica de 2ª ordem de Fm1 no eixo Y = 0.008880, com 15.6%, amplitude espectral máxima na faixa de ±10 Hz em torno da harmônica de 5ª ordem de Fm1 no eixo X = 0.003614, com 9.9%, e energia espectral na faixa de ±10 Hz em torno da harmônica de 5ª ordem de Fm1 no eixo Y = 0.000314, com 9.4%. Essas evidências descrevem valor RMS e nível global de vibração, valor de pico no sinal no tempo, energia espectral em bandas harmônicas e amplitude espectral máxima em banda harmônica nesta janela.",
+  "interpretacao_mecanica": "O conjunto de evidências é compatível com a classe predita de Desgaste Superficial, com probabilidade estimada de 96.4% para a classe predita. Essa interpretação deve ser vista com cautela, porque as evidências fornecidas descrevem variáveis do sinal e bandas harmônicas relevantes, mas não constituem confirmação direta de um mecanismo específico de falha."
+}""",
+                """{
   "interpretacao_vibracional": "A janela apresenta valor RMS no eixo Y = 0.170664, com importância local aproximada de 31.5%, valor RMS no eixo Z = 0.240076, com 18.6%, energia espectral na faixa de ±10 Hz em torno da harmônica de 5ª ordem de Fm2 no eixo Y = 0.000190, com 10.6%, valor RMS no eixo X = 0.083640, com 7.6%, e energia espectral na faixa de ±10 Hz em torno da harmônica de 1ª ordem de Fm1 no eixo Y = 0.001764, com 6.4%. Essas evidências descrevem valor RMS e nível global de vibração, além de energia espectral em bandas harmônicas nesta janela.",
   "interpretacao_mecanica": "O conjunto de evidências é compatível com a classe predita de Normal, com probabilidade estimada de 95.1% para a classe predita. Essa interpretação deve ser vista com cautela, porque as evidências fornecidas descrevem variáveis do sinal e bandas harmônicas relevantes, sem constituir confirmação direta de um mecanismo específico de falha."
-}"""
+}""",
+            ],
+            "manutencao": [
+                """{
+  "interpretacao_vibracional": "Na prática, os fatores mais influentes nesta janela foram o nível geral de vibração no eixo Y = 0.214310, com importância local aproximada de 28.7%, a concentração de vibração na harmônica de 1ª ordem do segundo estágio no eixo X = 0.004812, com 24.9%, a maior intensidade observada nessa harmônica do segundo estágio no eixo Z = 0.021334, com 19.8%, a diferença entre picos e nível geral no eixo Z = 5.184220, com 11.5%, e o nível geral de vibração no eixo X = 0.118400, com 8.2%. Essas evidências mostram que a janela combinou aumento do nível geral de vibração com vibração concentrada em harmônicas específicas do segundo estágio.",
+  "interpretacao_mecanica": "Para manutenção, o conjunto de evidências é compatível com a classe predita de Dente Trincado, com probabilidade estimada de 99.3% para a classe predita. Essa leitura deve ser tratada com cautela, porque os indicadores apresentados caracterizam o comportamento vibracional observado, mas não confirmam sozinhos um mecanismo específico de falha."
+}""",
+                """{
+  "interpretacao_vibracional": "Na prática, os fatores mais influentes nesta janela foram o nível geral de vibração no eixo X = 0.091390, com importância local aproximada de 24.6%, o pico mais forte do sinal no eixo Y = 0.969533, com 21.4%, a concentração de vibração na harmônica de 2ª ordem do primeiro estágio no eixo Y = 0.008880, com 15.6%, a maior intensidade observada na harmônica de 5ª ordem do primeiro estágio no eixo X = 0.003614, com 9.9%, e outra concentração de vibração na harmônica de 5ª ordem do primeiro estágio no eixo Y = 0.000314, com 9.4%. Essas evidências mostram a combinação de aumento do nível geral de vibração, presença de picos mais fortes e vibração concentrada em harmônicas específicas do primeiro estágio.",
+  "interpretacao_mecanica": "Para manutenção, o conjunto de evidências é compatível com a classe predita de Desgaste Superficial, com probabilidade estimada de 96.4% para a classe predita. Essa interpretação deve ser vista com cautela, porque os indicadores descrevem o padrão vibracional observado, sem confirmar diretamente um mecanismo específico de falha."
+}""",
+                """{
+  "interpretacao_vibracional": "Na prática, os fatores mais influentes nesta janela foram o nível geral de vibração no eixo Y = 0.170664, com importância local aproximada de 31.5%, o nível geral de vibração no eixo Z = 0.240076, com 18.6%, a concentração de vibração na harmônica de 5ª ordem do segundo estágio no eixo Y = 0.000190, com 10.6%, o nível geral de vibração no eixo X = 0.083640, com 7.6%, e a concentração de vibração na harmônica de 1ª ordem do primeiro estágio no eixo Y = 0.001764, com 6.4%. Essas evidências mostram predominância do nível geral de vibração, acompanhada por vibração localizada em harmônicas específicas dos dois estágios.",
+  "interpretacao_mecanica": "Para manutenção, o conjunto de evidências é compatível com a classe predita de Normal, com probabilidade estimada de 95.1% para a classe predita. Essa leitura deve ser tratada com cautela, porque os indicadores apresentados descrevem o comportamento vibracional da janela, sem constituir confirmação direta de falha."
+}""",
+            ],
+            "operacao": [
+                """{
+  "interpretacao_vibracional": "Nesta janela, os fatores mais influentes foram o nível geral de vibração no eixo Y = 0.214310, com importância local aproximada de 28.7%, a concentração de vibração em uma faixa específica do segundo estágio no eixo X = 0.004812, com 24.9%, a maior intensidade dessa faixa no eixo Z = 0.021334, com 19.8%, a diferença entre picos e nível geral no eixo Z = 5.184220, com 11.5%, e o nível geral de vibração no eixo X = 0.118400, com 8.2%. Em termos simples, essas variáveis fizeram o modelo reconhecer um padrão de vibração compatível com a classe predita.",
+  "interpretacao_mecanica": "Em termos simples, esse conjunto de variáveis levou o modelo a classificar a janela como Dente Trincado, com probabilidade estimada de 99.3% para a classe predita. Essa leitura deve ser interpretada com cautela, porque os indicadores descrevem o comportamento do sinal, mas não confirmam sozinhos uma falha específica."
+}""",
+                """{
+  "interpretacao_vibracional": "Nesta janela, os fatores mais influentes foram o nível geral de vibração no eixo X = 0.091390, com importância local aproximada de 24.6%, o maior pico do sinal no eixo Y = 0.969533, com 21.4%, a concentração de vibração em uma faixa específica do primeiro estágio no eixo Y = 0.008880, com 15.6%, a maior intensidade dessa faixa no eixo X = 0.003614, com 9.9%, e outra concentração de vibração em faixa específica do primeiro estágio no eixo Y = 0.000314, com 9.4%. Em termos simples, essas variáveis fizeram o modelo reconhecer um padrão de vibração compatível com a classe predita.",
+  "interpretacao_mecanica": "Em termos simples, esse conjunto de variáveis levou o modelo a classificar a janela como Desgaste Superficial, com probabilidade estimada de 96.4% para a classe predita. Essa leitura deve ser interpretada com cautela, porque os indicadores descrevem o sinal medido, mas não confirmam diretamente uma falha específica."
+}""",
+                """{
+  "interpretacao_vibracional": "Nesta janela, os fatores mais influentes foram o nível geral de vibração no eixo Y = 0.170664, com importância local aproximada de 31.5%, o nível geral de vibração no eixo Z = 0.240076, com 18.6%, a concentração de vibração em uma faixa específica do segundo estágio no eixo Y = 0.000190, com 10.6%, o nível geral de vibração no eixo X = 0.083640, com 7.6%, e a concentração de vibração em uma faixa específica do primeiro estágio no eixo Y = 0.001764, com 6.4%. Em termos simples, essas variáveis fizeram o modelo reconhecer um padrão de vibração mais próximo da condição Normal.",
+  "interpretacao_mecanica": "Em termos simples, esse conjunto de variáveis levou o modelo a classificar a janela como Normal, com probabilidade estimada de 95.1% para a classe predita. Essa leitura deve ser interpretada com cautela, porque os indicadores mostram o comportamento do sinal nesta janela, sem confirmar diretamente uma falha."
+}""",
+            ],
+        }
+
+        assistant_examples = examples_by_audience.get(audience_profile, examples_by_audience["engenharia"])
 
         return [
             {"role": "user", "content": example_user_1},
-            {"role": "assistant", "content": example_assistant_1},
+            {"role": "assistant", "content": assistant_examples[0]},
             {"role": "user", "content": example_user_2},
-            {"role": "assistant", "content": example_assistant_2},
+            {"role": "assistant", "content": assistant_examples[1]},
             {"role": "user", "content": example_user_3},
-            {"role": "assistant", "content": example_assistant_3},
+            {"role": "assistant", "content": assistant_examples[2]},
         ]
 
     def _describe_contribution(self, item: dict[str, Any]) -> str:

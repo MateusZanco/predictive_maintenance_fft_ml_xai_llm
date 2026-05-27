@@ -154,6 +154,7 @@ class ExplainRequest(BaseModel):
     window_index: int = Field(ge=0)
     top_k: int = Field(default=5, ge=1, le=20)
     prompt_strategy: Literal["few_shot", "zero_shot"] = "few_shot"
+    audience_profile: Literal["engenharia", "manutencao", "operacao"] = "engenharia"
 
 
 class ExplainResponse(BaseModel):
@@ -168,6 +169,7 @@ class ExplainResponse(BaseModel):
     processed_at_iso: str
     llm_processing_seconds: float
     prompt_strategy: Literal["few_shot", "zero_shot"]
+    audience_profile: Literal["engenharia", "manutencao", "operacao"]
     response_format: Literal["json", "raw_text"] = "json"
     predicted_class: int
     predicted_class_name: str
