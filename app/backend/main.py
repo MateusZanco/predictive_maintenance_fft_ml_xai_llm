@@ -51,6 +51,7 @@ SAMPLE_DIR = Path(os.getenv("ROCKPI_SAMPLE_DIR", PROJECT_ROOT / "outputs" / "roc
 MODEL_ARTIFACTS_DIR = Path(
     os.getenv("ROCKPI_MODEL_ARTIFACTS_DIR", PROJECT_ROOT / "outputs" / "model_artifacts_rockpi_simplificado")
 )
+SHAP_BACKEND = os.getenv("ROCKPI_SHAP_BACKEND", "tree_explainer")
 
 MAPA_CLASSES = {
     0: "Normal",
@@ -62,7 +63,7 @@ MAPA_CLASSES = {
 
 app = FastAPI(title="Rock Pi FFT Viewer", version="0.1.0")
 repo = SampleRepository(SAMPLE_DIR)
-model_service = SimplifiedTabularModelService(MODEL_ARTIFACTS_DIR, MAPA_CLASSES)
+model_service = SimplifiedTabularModelService(MODEL_ARTIFACTS_DIR, MAPA_CLASSES, shap_backend=SHAP_BACKEND)
 llm_service = LocalLlamaExplanationService()
 
 app.add_middleware(
@@ -298,6 +299,7 @@ def explain_window_shap(request: ShapRequest) -> ShapResponse:
         predicted_class=explanation["predicted_class"],
         predicted_class_name=explanation["predicted_class_name"],
         predicted_probability=explanation["predicted_probability"],
+        shap_backend=explanation["shap_backend"],
         expected_value=explanation["expected_value"],
         top_contributions=explanation["top_contributions"],
         feature_extraction_seconds=explanation["feature_extraction_seconds"],
@@ -374,6 +376,7 @@ def explain_window_llm(request: ExplainRequest) -> ExplainResponse:
         predicted_class=shap_explanation["predicted_class"],
         predicted_class_name=shap_explanation["predicted_class_name"],
         predicted_probability=shap_explanation["predicted_probability"],
+        shap_backend=shap_explanation["shap_backend"],
         interpretacao_vibracional=llm_explanation["interpretacao_vibracional"],
         interpretacao_mecanica=llm_explanation["interpretacao_mecanica"],
         unstructured_response=llm_explanation["unstructured_response"],

@@ -142,6 +142,7 @@ class ShapResponse(BaseModel):
     predicted_class: int
     predicted_class_name: str
     predicted_probability: float
+    shap_backend: str
     expected_value: float
     top_contributions: list[ShapContribution]
     feature_extraction_seconds: float
@@ -174,6 +175,7 @@ class ExplainResponse(BaseModel):
     predicted_class: int
     predicted_class_name: str
     predicted_probability: float
+    shap_backend: str
     interpretacao_vibracional: str
     interpretacao_mecanica: str
     unstructured_response: str | None = None

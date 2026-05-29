@@ -9,6 +9,11 @@ import numpy as np
 import pandas as pd
 from xgboost import DMatrix
 
+try:
+    import shap
+except ImportError:  # pragma: no cover - optional runtime dependency during rollout
+    shap = None
+
 from .fft_service import (
     calculate_kinematic_params,
     compute_amplitude_spectrum,
@@ -25,15 +30,22 @@ HARMONIC_BAND_HALF_WIDTH_HZ = 10.0
 
 
 class SimplifiedTabularModelService:
-    def __init__(self, artifacts_dir: Path, class_map: dict[int, str]):
+    def __init__(self, artifacts_dir: Path, class_map: dict[int, str], shap_backend: str = "native"):
         self.artifacts_dir = artifacts_dir
         self.class_map = class_map
+        self.shap_backend = self._normalize_shap_backend(shap_backend)
         self.model = None
         self.feature_columns: list[str] = []
         self.metadata: dict = {}
         self.load_error: str | None = None
         self.model_type: str | None = None
+        self._tree_explainer = None
         self._load()
+
+    @staticmethod
+    def _normalize_shap_backend(shap_backend: str) -> str:
+        normalized = str(shap_backend).strip().lower()
+        return normalized if normalized in {"native", "tree_explainer"} else "native"
 
     def _load(self) -> None:
         generic_model_path = self.artifacts_dir / "modelo_rockpi_simplificado.joblib"
@@ -60,12 +72,14 @@ class SimplifiedTabularModelService:
             self.feature_columns = json.loads(columns_path.read_text(encoding="utf-8"))
             self.metadata = json.loads(metadata_path.read_text(encoding="utf-8"))
             self.model_type = str(self.metadata.get("model_type") or type(self.model).__name__)
+            self._tree_explainer = None
             self.load_error = None
         except Exception as exc:
             self.model = None
             self.feature_columns = []
             self.metadata = {}
             self.model_type = None
+            self._tree_explainer = None
             self.load_error = f"Failed to load model artifacts: {exc}"
 
     @property
@@ -211,7 +225,7 @@ class SimplifiedTabularModelService:
         predicted_class = classes[best_position]
 
         shap_started_at = perf_counter()
-        contrib_matrix = self._compute_contributions(X_input, len(classes))
+        contrib_matrix, shap_backend_used = self._compute_contributions(X_input, len(classes))
         shap_inference_seconds = perf_counter() - shap_started_at
         class_index = classes.index(predicted_class)
         class_contrib = contrib_matrix[class_index]
@@ -242,6 +256,7 @@ class SimplifiedTabularModelService:
             "predicted_class": int(predicted_class),
             "predicted_class_name": self.class_map[int(predicted_class)],
             "predicted_probability": float(probabilities[best_position]),
+            "shap_backend": shap_backend_used,
             "expected_value": expected_value,
             "top_contributions": top_contributions,
             "feature_extraction_seconds": float(feature_extraction_seconds),
@@ -249,7 +264,14 @@ class SimplifiedTabularModelService:
             "shap_inference_seconds": float(shap_inference_seconds),
         }
 
-    def _compute_contributions(self, X_input: pd.DataFrame, n_classes: int) -> np.ndarray:
+    def _compute_contributions(self, X_input: pd.DataFrame, n_classes: int) -> tuple[np.ndarray, str]:
+        if self.shap_backend == "tree_explainer":
+            return self._compute_contributions_tree_explainer(
+                X_input,
+                n_classes=n_classes,
+                n_features=len(self.feature_columns),
+            ), "tree_explainer"
+
         model_type = (self.model_type or "").lower()
 
         if "xgb" in model_type:
@@ -259,20 +281,38 @@ class SimplifiedTabularModelService:
             contrib_array = np.asarray(contrib_raw)
 
             if contrib_array.ndim == 3 and contrib_array.shape[0] == 1:
-                return contrib_array[0]
+                return contrib_array[0], "native"
 
             if contrib_array.ndim == 2 and contrib_array.shape[0] == 1:
                 total_columns = contrib_array.shape[1]
                 expected_total = n_classes * (len(self.feature_columns) + 1)
                 if total_columns == expected_total:
-                    return contrib_array[0].reshape(n_classes, len(self.feature_columns) + 1)
+                    return contrib_array[0].reshape(n_classes, len(self.feature_columns) + 1), "native"
                 if total_columns == len(self.feature_columns) + 1:
-                    return np.expand_dims(contrib_array[0], axis=0)
+                    return np.expand_dims(contrib_array[0], axis=0), "native"
 
             raise RuntimeError(f"Unsupported XGBoost contribution shape: {contrib_array.shape}")
 
         contrib_raw = self.model.predict(X_input, pred_contrib=True)
-        return self._normalize_lightgbm_contrib_output(contrib_raw, n_classes, len(self.feature_columns))
+        return self._normalize_lightgbm_contrib_output(contrib_raw, n_classes, len(self.feature_columns)), "native"
+
+    def _get_tree_explainer(self):
+        if shap is None:
+            raise RuntimeError("SHAP library is not installed. Add 'shap' to backend requirements and rebuild the environment.")
+        if self._tree_explainer is None:
+            self._tree_explainer = shap.TreeExplainer(self.model)
+        return self._tree_explainer
+
+    def _compute_contributions_tree_explainer(self, X_input: pd.DataFrame, n_classes: int, n_features: int) -> np.ndarray:
+        explainer = self._get_tree_explainer()
+        shap_values_raw = explainer.shap_values(X_input)
+        expected_values_raw = explainer.expected_value
+        return self._normalize_tree_explainer_output(
+            shap_values_raw,
+            expected_values_raw,
+            n_classes=n_classes,
+            n_features=n_features,
+        )
 
     def _normalize_lightgbm_contrib_output(self, contrib_raw, n_classes: int, n_features: int) -> np.ndarray:
         if isinstance(contrib_raw, list):
@@ -296,6 +336,50 @@ class SimplifiedTabularModelService:
                 return contrib_array[0].reshape(n_classes, n_features + 1)
 
         raise RuntimeError(f"Unsupported LightGBM contribution shape: {contrib_array.shape}")
+
+    def _normalize_tree_explainer_output(
+        self,
+        shap_values_raw,
+        expected_values_raw,
+        n_classes: int,
+        n_features: int,
+    ) -> np.ndarray:
+        if isinstance(shap_values_raw, list):
+            contrib_array = np.stack([np.asarray(item)[0] for item in shap_values_raw], axis=0)
+        else:
+            contrib_array = np.asarray(shap_values_raw)
+
+            if contrib_array.ndim == 3:
+                if contrib_array.shape[0] == 1 and contrib_array.shape[1] == n_features and contrib_array.shape[2] == n_classes:
+                    contrib_array = np.transpose(contrib_array[0], (1, 0))
+                elif contrib_array.shape[0] == 1 and contrib_array.shape[1] == n_classes and contrib_array.shape[2] == n_features:
+                    contrib_array = contrib_array[0]
+                elif contrib_array.shape[0] == n_classes and contrib_array.shape[1] == 1 and contrib_array.shape[2] == n_features:
+                    contrib_array = contrib_array[:, 0, :]
+                else:
+                    raise RuntimeError(f"Unsupported TreeExplainer SHAP shape: {contrib_array.shape}")
+            elif contrib_array.ndim == 2:
+                if contrib_array.shape[0] == n_features and contrib_array.shape[1] == n_classes:
+                    contrib_array = contrib_array.T
+                elif contrib_array.shape[1] != n_features:
+                    raise RuntimeError(f"Unsupported TreeExplainer SHAP shape: {contrib_array.shape}")
+            else:
+                raise RuntimeError(f"Unsupported TreeExplainer SHAP shape: {contrib_array.shape}")
+
+        if contrib_array.ndim != 2:
+            raise RuntimeError(f"Unsupported TreeExplainer SHAP shape: {contrib_array.shape}")
+
+        base_values = np.asarray(expected_values_raw, dtype=float).reshape(-1)
+        if base_values.size == 1 and contrib_array.shape[0] > 1:
+            base_values = np.repeat(base_values, contrib_array.shape[0])
+
+        if contrib_array.shape[0] != base_values.size:
+            raise RuntimeError(
+                "TreeExplainer expected values do not match SHAP contribution rows: "
+                f"{base_values.shape} vs {contrib_array.shape}"
+            )
+
+        return np.concatenate([contrib_array, base_values.reshape(-1, 1)], axis=1)
 
 
 # Backward-compatible alias for existing imports if needed elsewhere.
