@@ -177,7 +177,7 @@ class ExplainResponse(BaseModel):
     predicted_probability: float
     shap_backend: str
     interpretacao_vibracional: str
-    interpretacao_mecanica: str
+    interpretacao_classe_predita: str
     unstructured_response: str | None = None
     system_prompt: str
     user_prompt: str

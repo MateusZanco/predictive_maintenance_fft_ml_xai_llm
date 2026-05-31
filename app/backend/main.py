@@ -378,7 +378,7 @@ def explain_window_llm(request: ExplainRequest) -> ExplainResponse:
         predicted_probability=shap_explanation["predicted_probability"],
         shap_backend=shap_explanation["shap_backend"],
         interpretacao_vibracional=llm_explanation["interpretacao_vibracional"],
-        interpretacao_mecanica=llm_explanation["interpretacao_mecanica"],
+        interpretacao_classe_predita=llm_explanation["interpretacao_classe_predita"],
         unstructured_response=llm_explanation["unstructured_response"],
         system_prompt=llm_explanation["system_prompt"],
         user_prompt=llm_explanation["user_prompt"],

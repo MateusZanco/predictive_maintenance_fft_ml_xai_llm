@@ -400,6 +400,30 @@ function ExplanationPanel({
     return `${Number(value).toFixed(1)} s`;
   }
 
+  function renderVibrationalInterpretation(value) {
+    if (!value) return null;
+    const lines = String(value)
+      .split(/\r?\n/)
+      .map((line) => line.trim())
+      .filter(Boolean);
+
+    const bulletLines = lines
+      .map((line) => line.replace(/^-\s*/, "").trim())
+      .filter(Boolean);
+
+    if (bulletLines.length >= 2 && lines.every((line) => line.startsWith("- "))) {
+      return (
+        <ul style={{ margin: "8px 0 0 20px", padding: 0, display: "grid", gap: 6 }}>
+          {bulletLines.map((line, index) => (
+            <li key={`${index}-${line.slice(0, 24)}`}>{line}</li>
+          ))}
+        </ul>
+      );
+    }
+
+    return <span> {value}</span>;
+  }
+
   return (
     <div style={explanationPanelStyle}>
       <div style={{ display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap" }}>
@@ -452,10 +476,11 @@ function ExplanationPanel({
           ) : (
             <>
               <div>
-                <strong>Interpretação Vibracional:</strong> {data.interpretacao_vibracional}
+                <strong>Interpretação Vibracional:</strong>
+                {renderVibrationalInterpretation(data.interpretacao_vibracional)}
               </div>
               <div>
-                <strong>Interpretação Mecânica:</strong> {data.interpretacao_mecanica}
+                <strong>Interpretação da Classe Predita:</strong> {data.interpretacao_classe_predita}
               </div>
             </>
           )}
