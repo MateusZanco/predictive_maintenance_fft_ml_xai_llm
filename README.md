@@ -124,6 +124,12 @@ O backend espera as amostras em:
 
 - `outputs/rockpi_test_samples`
 
+### Fonte dos Dados
+
+Os dados de referência utilizados no projeto podem ser acessados em:
+
+- Google Drive: <https://drive.google.com/drive/folders/1eJWnxC4rEQXuOxAbNJ6IErWKJHqsXry0?usp=drive_link>
+
 No container, esse diretório é montado como:
 
 - `/app/runtime_samples`
