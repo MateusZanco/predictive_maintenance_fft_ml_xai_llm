@@ -1,4 +1,4 @@
-# Sistema Embarcado de Diagnóstico Explicável por Vibração
+# Manutenção Preditiva em Redutores Planetários por Análise de Vibração: Classificação Explicável de Falhas Integrando ML, XAI e SLMs em Computação de Borda
 
 Aplicação para análise de sinais de vibração de uma caixa de engrenagens planetárias de dois estágios, com:
 
@@ -8,7 +8,7 @@ Aplicação para análise de sinais de vibração de uma caixa de engrenagens pl
 - geração de interpretação textual com LLM;
 - interface web para inspeção do sinal bruto, FFT, classe predita, contribuições locais e tempos de processamento.
 
-O foco do repositório, hoje, está na aplicação embarcada executada na Rock Pi. Os notebooks continuam no projeto como apoio para treinamento, validação e exportação dos artefatos do modelo.
+O foco do repositório, hoje, está na aplicação embarcada executada na Rock 4+. Os notebooks continuam no projeto como apoio para treinamento, validação e exportação dos artefatos do modelo.
 
 ## Visão Geral
 
@@ -62,7 +62,6 @@ A aplicação não sobe o servidor da LLM internamente. Ela espera um servidor c
 No `docker-compose` atual, o backend aponta por padrão para:
 
 - `LLM_CHAT_COMPLETIONS_URL=http://127.0.0.1:8080/v1/chat/completions`
-- `LLM_MODEL=Qwen3-0.6B-Q8_0.gguf`
 
 Esse valor pode ser alterado por variável de ambiente sem mudar o código.
 
@@ -310,11 +309,11 @@ Se a resposta vier sem JSON válido:
 
 O prompt adapta o estilo para três perfis:
 
-- `engenharia`
-- `manutencao`
-- `operacao`
+- `tecnico`
+- `contextualizado`
+- `didatico`
 
-#### Engenharia
+#### Técnico
 
 Foco:
 
@@ -330,7 +329,7 @@ Percentuais negativos:
 
 - `participação relativa de X% no impacto explicativo local absoluto, atuando em sentido oposto à classe predita`
 
-#### Manutenção
+#### Contextualizado
 
 Foco:
 
@@ -345,7 +344,7 @@ Percentuais negativos:
 
 - `com participação relativa negativa de X% do impacto local da classificação`
 
-#### Operação
+#### Didático
 
 Foco:
 
@@ -432,7 +431,7 @@ O exemplo abaixo mostra o formato completo do `system prompt` e do `user prompt`
       <TERM name="approximate_local_importance">share of absolute local explanatory impact in the current window</TERM>
     </ATTRIBUTION_TERMS>
   </LEGEND>
-  <ACTIVE_AUDIENCE_PROFILE name="engenharia">Use the most rigorous technical vocabulary available in the provided evidence. Distinguish clearly between time-domain metrics and frequency-domain harmonic-band metrics.</ACTIVE_AUDIENCE_PROFILE>
+  <ACTIVE_AUDIENCE_PROFILE name="tecnico">Use the most rigorous technical vocabulary available in the provided evidence. Distinguish clearly between time-domain metrics and frequency-domain harmonic-band metrics.</ACTIVE_AUDIENCE_PROFILE>
   <TASK>
     <VIBRATIONAL>Write interpretacao_vibracional as a single JSON string with exactly 5 bullet lines, one line for each evidence item, each starting with "- ".</VIBRATIONAL>
     <VIBRATIONAL>In each bullet, cite the variable, axis or harmonic order, value, and relative percentage contribution for the current window.</VIBRATIONAL>
@@ -455,7 +454,7 @@ O exemplo abaixo mostra o formato completo do `system prompt` e do `user prompt`
 </SYSTEM_PROMPT>
 
 <USER_PROMPT>
-  <AUDIENCE_PROFILE>engenharia</AUDIENCE_PROFILE>
+  <AUDIENCE_PROFILE>tecnico</AUDIENCE_PROFILE>
   <PREDICTED_CLASS>Desgaste Superficial</PREDICTED_CLASS>
   <PREDICTED_CLASS_PROBABILITY>0.8318</PREDICTED_CLASS_PROBABILITY>
   <OBSERVED_EVIDENCE>
@@ -483,13 +482,13 @@ Na implementação atual, os exemplos `few_shot` não são inseridos dentro do `
 7. `assistant` de exemplo 3
 8. `user` da janela atual
 
-Abaixo está um exemplo completo da sequência `few_shot` para o perfil `engenharia`.
+Abaixo está um exemplo completo da sequência `few_shot` para o perfil `tecnico`.
 
 #### Exemplo 1: `Dente Trincado`
 
 ```xml
 <USER_PROMPT>
-  <AUDIENCE_PROFILE>engenharia</AUDIENCE_PROFILE>
+  <AUDIENCE_PROFILE>tecnico</AUDIENCE_PROFILE>
   <PREDICTED_CLASS>Dente Trincado</PREDICTED_CLASS>
   <PREDICTED_CLASS_PROBABILITY>0.9925</PREDICTED_CLASS_PROBABILITY>
   <OBSERVED_EVIDENCE>
@@ -513,7 +512,7 @@ Abaixo está um exemplo completo da sequência `few_shot` para o perfil `engenha
 
 ```xml
 <USER_PROMPT>
-  <AUDIENCE_PROFILE>engenharia</AUDIENCE_PROFILE>
+  <AUDIENCE_PROFILE>tecnico</AUDIENCE_PROFILE>
   <PREDICTED_CLASS>Desgaste Superficial</PREDICTED_CLASS>
   <PREDICTED_CLASS_PROBABILITY>0.9640</PREDICTED_CLASS_PROBABILITY>
   <OBSERVED_EVIDENCE>
@@ -537,7 +536,7 @@ Abaixo está um exemplo completo da sequência `few_shot` para o perfil `engenha
 
 ```xml
 <USER_PROMPT>
-  <AUDIENCE_PROFILE>engenharia</AUDIENCE_PROFILE>
+  <AUDIENCE_PROFILE>tecnico</AUDIENCE_PROFILE>
   <PREDICTED_CLASS>Normal</PREDICTED_CLASS>
   <PREDICTED_CLASS_PROBABILITY>0.9510</PREDICTED_CLASS_PROBABILITY>
   <OBSERVED_EVIDENCE>
@@ -622,7 +621,7 @@ Isso permite auditar exatamente:
   "window_index": 0,
   "top_k": 5,
   "prompt_strategy": "few_shot",
-  "audience_profile": "engenharia"
+  "audience_profile": "tecnico"
 }
 ```
 
@@ -643,14 +642,3 @@ Os artefatos carregados pelo backend são gerados fora da aplicação e depois s
 - A LLM não substitui a explicabilidade local; ela transforma as contribuições locais em texto.
 - O texto retornado não deve ser tratado como confirmação física de mecanismo de falha.
 - O modo `few_shot` é o mais estável para o fluxo atual.
-
-## Arquivos Mais Relevantes
-
-- [README.md](README.md)
-- [app/backend/main.py](app/backend/main.py)
-- [app/backend/model_service.py](app/backend/model_service.py)
-- [app/backend/llm_service.py](app/backend/llm_service.py)
-- [app/backend/schemas.py](app/backend/schemas.py)
-- [app/frontend/src/App.jsx](app/frontend/src/App.jsx)
-- [docker/docker-compose.yml](docker/docker-compose.yml)
-- [docker/Dockerfile](docker/Dockerfile)

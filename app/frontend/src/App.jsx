@@ -371,9 +371,9 @@ function TimingPanel({ predictionData, shapData, explanationData, explanationLoa
 }
 
 function formatAudienceProfileLabel(value) {
-  if (value === "engenharia") return "Engenharia";
-  if (value === "manutencao") return "Manutenção";
-  if (value === "operacao") return "Operação";
+  if (value === "tecnico" || value === "engenharia") return "Técnico";
+  if (value === "contextualizado" || value === "manutencao") return "Contextualizado";
+  if (value === "didatico" || value === "operacao") return "Didático";
   return value || "";
 }
 
@@ -438,9 +438,9 @@ function ExplanationPanel({
         <label style={{ display: "flex", gap: 8, alignItems: "center" }}>
           <span>Perfil</span>
           <select value={audienceProfile} onChange={(e) => onAudienceProfileChange(e.target.value)} disabled={loading}>
-            <option value="engenharia">Engenharia</option>
-            <option value="manutencao">Manutenção</option>
-            <option value="operacao">Operação</option>
+            <option value="tecnico">Técnico</option>
+            <option value="contextualizado">Contextualizado</option>
+            <option value="didatico">Didático</option>
           </select>
         </label>
         <button type="button" onClick={onGenerate} disabled={disabled || loading}>
@@ -568,7 +568,7 @@ export default function App() {
   const [shapResult, setShapResult] = useState(null);
   const [shapError, setShapError] = useState("");
   const [promptStrategy, setPromptStrategy] = useState("few_shot");
-  const [audienceProfile, setAudienceProfile] = useState("engenharia");
+  const [audienceProfile, setAudienceProfile] = useState("tecnico");
   const [explanationResult, setExplanationResult] = useState(null);
   const [explanationError, setExplanationError] = useState("");
   const [explanationLoading, setExplanationLoading] = useState(false);

@@ -5,6 +5,10 @@ from typing import Literal
 from pydantic import BaseModel, Field
 
 
+AudienceProfileRequest = Literal["tecnico", "contextualizado", "didatico", "engenharia", "manutencao", "operacao"]
+AudienceProfileResponse = Literal["tecnico", "contextualizado", "didatico"]
+
+
 class SampleSummary(BaseModel):
     sample_id: str
     dataset_operacao: str
@@ -155,7 +159,7 @@ class ExplainRequest(BaseModel):
     window_index: int = Field(ge=0)
     top_k: int = Field(default=5, ge=1, le=20)
     prompt_strategy: Literal["few_shot", "zero_shot"] = "few_shot"
-    audience_profile: Literal["engenharia", "manutencao", "operacao"] = "engenharia"
+    audience_profile: AudienceProfileRequest = "tecnico"
 
 
 class ExplainResponse(BaseModel):
@@ -170,7 +174,7 @@ class ExplainResponse(BaseModel):
     processed_at_iso: str
     llm_processing_seconds: float
     prompt_strategy: Literal["few_shot", "zero_shot"]
-    audience_profile: Literal["engenharia", "manutencao", "operacao"]
+    audience_profile: AudienceProfileResponse
     response_format: Literal["json", "raw_text"] = "json"
     predicted_class: int
     predicted_class_name: str

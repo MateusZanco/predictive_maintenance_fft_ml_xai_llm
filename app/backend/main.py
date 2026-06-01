@@ -371,7 +371,7 @@ def explain_window_llm(request: ExplainRequest) -> ExplainResponse:
         processed_at_iso=processed_at_iso,
         llm_processing_seconds=llm_processing_seconds,
         prompt_strategy=request.prompt_strategy,
-        audience_profile=request.audience_profile,
+        audience_profile=llm_explanation["audience_profile"],
         response_format=llm_explanation["response_format"],
         predicted_class=shap_explanation["predicted_class"],
         predicted_class_name=shap_explanation["predicted_class_name"],
