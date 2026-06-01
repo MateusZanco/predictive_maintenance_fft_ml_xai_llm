@@ -4,6 +4,10 @@ matplotlib
 scipy
 scikit-learn
 xgboost
+catboost
+lightgbm
 shap
 openai
 notebook
+fastapi
+uvicorn

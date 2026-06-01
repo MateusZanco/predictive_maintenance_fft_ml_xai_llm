@@ -1,0 +1,18 @@
+services:
+  rockpi-fft-viewer:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    network_mode: host
+    restart: unless-stopped
+    environment:
+      APP_PORT: 8000
+      LLM_CHAT_COMPLETIONS_URL: http://127.0.0.1:8080/v1/chat/completions
+      LLM_MODEL: Qwen3-0.6B-Q8_0.gguf
+      LLM_TEMPERATURE: 0.2
+      LLM_TOP_P: 0.8
+      LLM_MAX_TOKENS: 500
+      LLM_TIMEOUT_SECONDS: 800
+    volumes:
+      - ../outputs/rockpi_test_samples:/app/runtime_samples:ro
+      - ../outputs/model_artifacts_rockpi_simplificado:/app/model_artifacts:ro

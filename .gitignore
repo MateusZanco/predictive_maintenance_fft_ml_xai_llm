@@ -1,6 +1,9 @@
 /images
-/documento_referencia
+documento_referencia
 /data
 /backup
 /.venv
 /.env
+catboost_info
+/outputs
+__pycache__
